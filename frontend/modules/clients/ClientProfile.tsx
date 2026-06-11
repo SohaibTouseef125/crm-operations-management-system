@@ -42,7 +42,7 @@ interface FieldReport {
   attachments: string[] | null;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 function reportAttachmentUrl(path: string): string {
   const normalized = path.replace(/\\/g, '/');

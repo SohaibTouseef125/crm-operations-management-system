@@ -10,7 +10,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { Plus, Download, CreditCard, Filter, Upload, Trash2,XCircle } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 function fileUrl(filePath: string | null): string | null {
   if (!filePath) return null;
