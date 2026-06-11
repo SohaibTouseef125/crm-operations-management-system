@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const PRODUCTION_API_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  baseURL: PRODUCTION_API_URL,
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
@@ -18,6 +20,14 @@ const logout = () => {
 
 api.interceptors.request.use(
   (config) => {
+    // Override baseURL at runtime for local development
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        config.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      }
+    }
+
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -31,7 +41,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // Skip logout if it's the login request itself failing
     if (originalRequest.url === '/auth/login') {
       return Promise.reject(error);
