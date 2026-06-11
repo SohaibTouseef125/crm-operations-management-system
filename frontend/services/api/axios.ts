@@ -1,10 +1,22 @@
 import axios from 'axios';
 
-// NEXT_PUBLIC_API_URL must be set in Vercel Dashboard environment variables:
-// https://sohaib125-crm-operations-management-system.hf.space
-// For local dev, .env.local sets it to http://localhost:8000
+// Force HTTPS — replace http:// with https:// for any non-localhost URL
+function getSafeBaseURL(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL || '';
+  if (!url) {
+    // Last resort hardcoded fallback
+    return 'https://sohaib125-crm-operations-management-system.hf.space';
+  }
+  // If URL is localhost, keep as-is (local dev)
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    return url;
+  }
+  // Force https:// for any production URL
+  return url.replace(/^http:\/\//i, 'https://');
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: getSafeBaseURL(),
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
