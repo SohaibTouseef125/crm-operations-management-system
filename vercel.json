@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://sohaib125-crm-operations-management-system.hf.space/:path*"
-    }
-  ]
-}
