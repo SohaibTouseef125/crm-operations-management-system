@@ -1,22 +1,16 @@
 import axios from 'axios';
 
-// Force HTTPS — replace http:// with https:// for any non-localhost URL
-function getSafeBaseURL(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL || '';
-  if (!url) {
-    // Last resort hardcoded fallback
-    return 'https://sohaib125-crm-operations-management-system.hf.space';
-  }
-  // If URL is localhost, keep as-is (local dev)
-  if (url.includes('localhost') || url.includes('127.0.0.1')) {
-    return url;
-  }
-  // Force https:// for any production URL
-  return url.replace(/^http:\/\//i, 'https://');
-}
+const BACKEND_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
+
+// Always use the hardcoded HTTPS backend URL.
+// No env vars, no conditions, no proxies — just direct HTTPS.
+// For local dev, override by setting NEXT_PUBLIC_API_URL in .env.local.
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+  ? process.env.NEXT_PUBLIC_API_URL.replace(/^http:\/\/(?!localhost)/, 'https://')
+  : BACKEND_URL;
 
 const api = axios.create({
-  baseURL: getSafeBaseURL(),
+  baseURL: BASE_URL,
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
