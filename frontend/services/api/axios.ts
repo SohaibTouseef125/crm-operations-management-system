@@ -1,9 +1,16 @@
 import axios from 'axios';
 
-const PRODUCTION_API_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
+// In production on Vercel, all API calls go through /api/* which Vercel rewrites
+// to https://sohaib125-crm-operations-management-system.hf.space/* — no Mixed Content.
+// In local dev, we call the backend directly via NEXT_PUBLIC_API_URL.
+const isLocalDev =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
 const api = axios.create({
-  baseURL: PRODUCTION_API_URL,
+  baseURL: isLocalDev
+    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
+    : '/api',
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
@@ -20,14 +27,6 @@ const logout = () => {
 
 api.interceptors.request.use(
   (config) => {
-    // Override baseURL at runtime for local development
-    if (typeof window !== 'undefined') {
-      const host = window.location.hostname;
-      if (host === 'localhost' || host === '127.0.0.1') {
-        config.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      }
-    }
-
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -42,7 +41,6 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip logout if it's the login request itself failing
     if (originalRequest.url === '/auth/login') {
       return Promise.reject(error);
     }
@@ -56,7 +54,9 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       try {
-        const refreshResponse = await api.post('/auth/refresh', { refresh_token: refreshToken });
+        const refreshResponse = await api.post('/auth/refresh', {
+          refresh_token: refreshToken,
+        });
         const { access_token, refresh_token } = refreshResponse.data;
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('refresh_token', refresh_token);
