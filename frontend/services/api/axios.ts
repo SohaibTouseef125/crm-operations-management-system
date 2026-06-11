@@ -1,16 +1,10 @@
 import axios from 'axios';
 
-// In production on Vercel, all API calls go through /api/* which Vercel rewrites
-// to https://sohaib125-crm-operations-management-system.hf.space/* — no Mixed Content.
-// In local dev, we call the backend directly via NEXT_PUBLIC_API_URL.
-const isLocalDev =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
+// NEXT_PUBLIC_API_URL must be set in Vercel Dashboard environment variables:
+// https://sohaib125-crm-operations-management-system.hf.space
+// For local dev, .env.local sets it to http://localhost:8000
 const api = axios.create({
-  baseURL: isLocalDev
-    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
-    : '/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
