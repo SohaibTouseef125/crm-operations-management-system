@@ -1,3 +1,4 @@
+import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -23,10 +24,12 @@ app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(AuditMiddleware, db_session_maker=AsyncSessionLocal)
 app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 
-# Set all CORS enabled origins
+# CORS — allow all Vercel preview/production URLs + localhost
+# allow_origin_regex handles dynamic Vercel preview URLs automatically
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "https://localhost:3000"],
+    allow_origin_regex=r"https://crm-operations-management-system[a-z0-9-]*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +55,7 @@ app.include_router(issues.router, prefix="", tags=["Issues"])
 app.include_router(reports.router, prefix="/reports", tags=["Field Reports"])
 app.include_router(uploads.router, prefix="/uploads", tags=["File Uploads"])
 
-# Mount uploads after routers to avoid route conflicts (allow upload POSTs)
+# Mount uploads after routers to avoid route conflicts
 app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 @app.get("/")
@@ -62,4 +65,3 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
-
