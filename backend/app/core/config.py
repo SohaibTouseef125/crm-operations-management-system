@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
     # Comma-separated origins, e.g. http://localhost:3000,https://crm.example.com
-    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "https://crm-operations-management-system-r595ceray.vercel.app/")
     ALLOW_PUBLIC_REGISTER: bool = os.getenv("ALLOW_PUBLIC_REGISTER", "true").lower() == "true"
     PUBLIC_REGISTER_ROLES: str = os.getenv(
         "PUBLIC_REGISTER_ROLES",

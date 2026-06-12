@@ -21,7 +21,7 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const h = window.location.hostname;
       if (h === 'localhost' || h === '127.0.0.1') {
-        config.baseURL = 'http://localhost:8000';
+        config.baseURL = 'https://sohaib125-crm-operations-management-system.hf.space';
       } else {
         // Guarantee HTTPS on every request in production
         config.baseURL = PROD_URL;

@@ -29,7 +29,7 @@ app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_origin_regex=r"https://crm-operations-management-system-qb2bd2xs5.vercel.app/",
+    allow_origin_regex=r"https://crm-operations-management-system-r595ceray.vercel.app/",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
