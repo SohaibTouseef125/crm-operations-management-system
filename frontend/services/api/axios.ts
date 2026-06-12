@@ -22,12 +22,6 @@ api.interceptors.request.use(
         ? 'http://localhost:8000'
         : PROD_URL;
     }
-
-    // Add trailing slash to avoid FastAPI 307 redirect which causes Mixed Content
-    if (config.url && !config.url.includes('?') && !config.url.endsWith('/')) {
-      config.url = config.url + '/';
-    }
-
     const token = localStorage.getItem('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
@@ -48,7 +42,7 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       try {
-        const { data } = await api.post('/auth/refresh/', { refresh_token: refreshToken });
+        const { data } = await api.post('/auth/refresh', { refresh_token: refreshToken });
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
