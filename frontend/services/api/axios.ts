@@ -1,44 +1,32 @@
 import axios from 'axios';
 
-// ─── Base URL ────────────────────────────────────────────────────────────────
-// We do NOT rely on NEXT_PUBLIC_API_URL because Vercel may bake http:// into
-// the bundle if the env var is wrong.  Instead we detect at runtime:
-//   • localhost  →  use .env.local value (http://localhost:8000)
-//   • production →  always use the hardcoded HTTPS backend URL
-// This runs in the browser only, so window is always defined here.
-
 const PROD_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
-const DEV_URL  = 'http://localhost:8000';
 
-function getBaseURL(): string {
-  // SSR / server build: use PROD_URL (safe default)
-  if (typeof window === 'undefined') return PROD_URL;
-
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return DEV_URL;
-
-  // Any deployed domain (vercel.app, custom domain, etc.)
-  return PROD_URL;
-}
-
+// Always start with PROD_URL — no conditions, no env vars, no build-time baking
 const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: PROD_URL,
   withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
 const logout = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   if (typeof window !== 'undefined') window.location.href = '/login';
 };
 
-// ─── Request interceptor ─────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
-    // Re-evaluate baseURL on every request (handles client-side hydration)
-    config.baseURL = getBaseURL();
+    // Switch to local backend only when running on localhost
+    if (typeof window !== 'undefined') {
+      const h = window.location.hostname;
+      if (h === 'localhost' || h === '127.0.0.1') {
+        config.baseURL = 'http://localhost:8000';
+      } else {
+        // Guarantee HTTPS on every request in production
+        config.baseURL = PROD_URL;
+      }
+    }
 
     const token = localStorage.getItem('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -47,7 +35,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// ─── Response interceptor ────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -78,3 +65,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+  
