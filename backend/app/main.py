@@ -28,8 +28,8 @@ app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 # allow_origin_regex handles dynamic Vercel preview URLs automatically
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://localhost:3000"],
-    allow_origin_regex=r"https://crm-operations-management-system[a-z0-9-]*\.vercel\.app",
+    allow_origins=["https://crm-operations-management-system-de5p371qh.vercel.app/", "https://localhost:3000"],
+    allow_origin_regex=r"https://crm-operations-management-system-de5p371qh.vercel.app/",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
