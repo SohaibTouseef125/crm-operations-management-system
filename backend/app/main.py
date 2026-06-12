@@ -16,7 +16,7 @@ from app.middleware.logging import AuditMiddleware
 app = FastAPI(
     title="Crop2X Internal CRM & Operations Management System",
     description="Enterprise-grade CRM for hardware and agriculture operations.",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Add middleware (order matters - first added is outermost)
@@ -29,8 +29,7 @@ app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_origin_regex=r"https://crm-operations-management-system-r595ceray.vercel.app/",
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
