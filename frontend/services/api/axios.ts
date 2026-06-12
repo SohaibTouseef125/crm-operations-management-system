@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const PROD_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
 
-// Always start with PROD_URL — no conditions, no env vars, no build-time baking
 const api = axios.create({
   baseURL: PROD_URL,
   withCredentials: false,
@@ -17,15 +16,16 @@ const logout = () => {
 
 api.interceptors.request.use(
   (config) => {
-    // Switch to local backend only when running on localhost
     if (typeof window !== 'undefined') {
       const h = window.location.hostname;
-      if (h === 'localhost' || h === '127.0.0.1') {
-        config.baseURL = 'https://sohaib125-crm-operations-management-system.hf.space';
-      } else {
-        // Guarantee HTTPS on every request in production
-        config.baseURL = PROD_URL;
-      }
+      config.baseURL = (h === 'localhost' || h === '127.0.0.1')
+        ? 'http://localhost:8000'
+        : PROD_URL;
+    }
+
+    // Add trailing slash to avoid FastAPI 307 redirect which causes Mixed Content
+    if (config.url && !config.url.includes('?') && !config.url.endsWith('/')) {
+      config.url = config.url + '/';
     }
 
     const token = localStorage.getItem('access_token');
@@ -40,7 +40,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (originalRequest.url === '/auth/login') return Promise.reject(error);
+    if (originalRequest.url?.includes('/auth/login')) return Promise.reject(error);
 
     if (error.response?.status === 401 && !originalRequest?._retry) {
       const refreshToken = localStorage.getItem('refresh_token');
@@ -48,7 +48,7 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       try {
-        const { data } = await api.post('/auth/refresh', { refresh_token: refreshToken });
+        const { data } = await api.post('/auth/refresh/', { refresh_token: refreshToken });
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
@@ -65,4 +65,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-  
