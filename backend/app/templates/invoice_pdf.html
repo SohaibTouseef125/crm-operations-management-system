@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 12px; color: #222; padding: 30px; }
+  .header { display: flex; justify-content: space-between; margin-bottom: 24px; border-bottom: 3px solid #1d4ed8; padding-bottom: 16px; }
+  .company-name { font-size: 22px; font-weight: bold; color: #1d4ed8; }
+  .company-meta { font-size: 10px; color: #555; margin-top: 4px; }
+  .invoice-title { font-size: 18px; font-weight: bold; text-align: right; color: #1d4ed8; }
+  .invoice-meta { text-align: right; font-size: 11px; margin-top: 6px; color: #444; }
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #888; margin-bottom: 6px; letter-spacing: 0.5px; }
+  .bill-to { background: #f8fafc; border-left: 4px solid #1d4ed8; padding: 12px 16px; border-radius: 0 4px 4px 0; }
+  .bill-to .client-name { font-size: 14px; font-weight: bold; color: #1e293b; }
+  .bill-to .client-detail { font-size: 11px; color: #555; margin-top: 3px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  thead th { background: #1d4ed8; color: white; padding: 8px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+  thead th:last-child { text-align: right; }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 11px; vertical-align: top; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody td:last-child { text-align: right; font-weight: bold; }
+  .totals-table { margin-left: auto; width: 280px; }
+  .totals-table td { padding: 5px 10px; font-size: 11px; }
+  .totals-table .total-row { font-weight: bold; font-size: 13px; background: #1d4ed8; color: white; }
+  .totals-table .total-row td { padding: 8px 10px; }
+  .terms-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 4px; padding: 12px 16px; margin-top: 20px; }
+  .terms-title { font-weight: bold; font-size: 11px; color: #0369a1; margin-bottom: 6px; }
+  .terms-text { font-size: 10px; color: #555; line-height: 1.5; }
+  .bank-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 12px 16px; margin-top: 12px; }
+  .bank-title { font-weight: bold; font-size: 11px; color: #15803d; margin-bottom: 6px; }
+  .bank-text { font-size: 10px; color: #555; line-height: 1.6; }
+  .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 9px; color: #aaa; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-DRAFT { background: #f1f5f9; color: #64748b; }
+  .status-SENT { background: #dbeafe; color: #1d4ed8; }
+  .status-PAID { background: #dcfce7; color: #16a34a; }
+  .status-OVERDUE { background: #fee2e2; color: #dc2626; }
+  .status-CANCELLED { background: #ffedd5; color: #ea580c; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <div class="company-name">Crop2X (Private) Limited</div>
+    <div class="company-meta">NTN: A278468 &nbsp;|&nbsp; SNTN: A278468-8</div>
+  </div>
+  <div>
+    <div class="invoice-title">INVOICE</div>
+    <div class="invoice-meta">
+      <strong>#{{ invoice.invoice_number }}</strong><br/>
+      Date: {{ invoice.invoice_date.strftime('%d/%m/%Y') if invoice.invoice_date else 'N/A' }}<br/>
+      Due: {{ invoice.due_date.strftime('%d/%m/%Y') }}<br/>
+      Status: <span class="status-badge status-{{ invoice.status.value }}">{{ invoice.status.value }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Bill To -->
+<div class="section">
+  <div class="section-title">Prepared For</div>
+  <div class="bill-to">
+    <div class="client-name">{{ client.company_name }}</div>
+    {% if client.address %}
+    <div class="client-detail">{{ client.address }}</div>
+    {% endif %}
+    {% if client.contact_info %}
+    <div class="client-detail">Tel: {{ client.contact_info }}</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Items Table -->
+<div class="section">
+  <div class="section-title">Services / Items</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;">S.No</th>
+        <th>Item</th>
+        <th>Description</th>
+        <th style="width:130px; text-align:right;">Price (PKR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if items %}
+        {% for item in items %}
+        <tr>
+          <td>{{ item.serial_number }}</td>
+          <td><strong>{{ item.item_name }}</strong></td>
+          <td>{{ item.description or '' }}</td>
+          <td>{{ "{:,.0f}".format(item.unit_price) }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="4" style="text-align:center; color:#aaa; padding:16px;">No line items</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- Totals -->
+  <table class="totals-table">
+    <tr>
+      <td>Total</td>
+      <td style="text-align:right;">{{ "{:,.0f}".format(subtotal) }}</td>
+    </tr>
+    <tr>
+      <td>Sales Tax ({{ tax_percentage }}%)</td>
+      <td style="text-align:right;">{{ "{:,.0f}".format(tax_amount) }}</td>
+    </tr>
+    <tr class="total-row">
+      <td><strong>Total Budget (incl. Sales Tax)</strong></td>
+      <td style="text-align:right;"><strong>{{ "{:,.0f}".format(total_amount) }} /-</strong></td>
+    </tr>
+  </table>
+</div>
+
+<!-- Notes -->
+{% if invoice.notes %}
+<div class="section">
+  <div class="section-title">Notes</div>
+  <div class="terms-text">{{ invoice.notes }}</div>
+</div>
+{% endif %}
+
+<!-- Terms -->
+<div class="terms-box">
+  <div class="terms-title">Terms and Conditions</div>
+  <div class="terms-text">{{ invoice.payment_terms or 'Payment can be made in the form of Cheque to the favour of Crop2X Pvt Ltd. The Quotation is valid for 30 days.' }}</div>
+</div>
+
+<!-- Bank Details -->
+<div class="bank-box">
+  <div class="bank-title">Crop2X Account Details</div>
+  <div class="bank-text">{{ invoice.bank_details or 'Meezan Bank, Title: Crop2X (Private) Limited, Account no: 9952-0105470950, IBAN: PK14MEZN0099520105470950' }}</div>
+</div>
+
+<div class="footer">
+  Generated by Crop2X CRM &nbsp;|&nbsp; Crop2X (Private) Limited &nbsp;|&nbsp; NTN: A278468
+</div>
+
+</body>
+</html>

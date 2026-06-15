@@ -74,6 +74,12 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: 'CreditCard',
     roles: ['ADMIN', 'MANAGER', 'ACCOUNTS'],
   },
+  {
+    name: 'Invoices',
+    href: '/billing/invoices',
+    iconName: 'FileText',
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS'],
+  },
   // ── Tasks ──
   {
     name: 'Tasks',
@@ -123,7 +129,8 @@ export const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/inventory':      ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/components':     ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/issues':         ['ADMIN', 'MANAGER', 'BUSINESS'],
-  '/billing':        ['ADMIN', 'MANAGER', 'ACCOUNTS'],
+  '/billing':              ['ADMIN', 'MANAGER', 'ACCOUNTS'],
+  '/billing/invoices':     ['ADMIN', 'MANAGER', 'ACCOUNTS'],
   '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/performance':    ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/notifications':  ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],

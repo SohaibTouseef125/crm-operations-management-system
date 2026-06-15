@@ -40,6 +40,17 @@ BILLING_WRITE_ROLES = [
     UserRole.ACCOUNTS,
 ]
 
+INVOICE_DELETE_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+]
+
+INVOICE_SEND_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.ACCOUNTS,
+]
+
 REPORT_READ_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,

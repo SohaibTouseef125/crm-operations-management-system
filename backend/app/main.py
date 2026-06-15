@@ -1,8 +1,10 @@
 import re
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pathlib import Path
+from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.database.session import engine, AsyncSessionLocal
 from app.routers import (
@@ -13,19 +15,54 @@ from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import AuditMiddleware
 
+
+# ── APScheduler for overdue detection ────────────────────────────────────────
+try:
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from app.services.overdue_service import run_overdue_job
+    _scheduler = AsyncIOScheduler()
+    _scheduler.add_job(run_overdue_job, "cron", hour=0, minute=5, id="overdue_detector")
+    _SCHEDULER_AVAILABLE = True
+except ImportError:
+    _SCHEDULER_AVAILABLE = False
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if _SCHEDULER_AVAILABLE:
+        _scheduler.start()
+    yield
+    if _SCHEDULER_AVAILABLE:
+        _scheduler.shutdown(wait=False)
+
+
 app = FastAPI(
     title="Crop2X Internal CRM & Operations Management System",
     description="Enterprise-grade CRM for hardware and agriculture operations.",
     version="1.0.0",
+    lifespan=lifespan,
 )
+
+# ── HTTPS redirect middleware ─────────────────────────────────────────────────
+# Hugging Face proxy strips https and forwards as http internally.
+# When FastAPI does a 307 trailing-slash redirect it uses the internal http scheme.
+# This middleware rewrites every redirect response to use https.
+@app.middleware("http")
+async def force_https_redirects(request: Request, call_next):
+    response = await call_next(request)
+    if response.status_code in (301, 302, 307, 308):
+        location = response.headers.get("location", "")
+        if location.startswith("http://"):
+            new_location = location.replace("http://", "https://", 1)
+            response.headers["location"] = new_location
+    return response
 
 # Add middleware (order matters - first added is outermost)
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(AuditMiddleware, db_session_maker=AsyncSessionLocal)
 app.add_middleware(RateLimitMiddleware, calls=100, period=60)
 
-# CORS — allow all Vercel preview/production URLs + localhost
-# allow_origin_regex handles dynamic Vercel preview URLs automatically
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

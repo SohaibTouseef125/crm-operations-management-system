@@ -12,6 +12,7 @@ from app.services.activity_log_service import ActivityLogService
 
 router = APIRouter()
 
+
 @router.get("/", response_model=List[ClientInDB])
 async def read_clients(
     skip: int = 0,
@@ -21,6 +22,7 @@ async def read_clients(
 ):
     repo = ClientRepository(db)
     return await repo.get_all(skip=skip, limit=limit)
+
 
 @router.post("/", response_model=ClientInDB)
 async def create_client(
@@ -41,6 +43,7 @@ async def create_client(
     )
     return client
 
+
 @router.get("/{client_id}", response_model=ClientInDB)
 async def read_client(
     client_id: UUID,
@@ -52,6 +55,7 @@ async def read_client(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
     return client
+
 
 @router.patch("/{client_id}", response_model=ClientInDB)
 async def update_client(
@@ -85,6 +89,7 @@ async def update_client(
     )
     return updated_client
 
+
 @router.delete("/{client_id}", response_model=ClientInDB)
 async def delete_client(
     client_id: UUID,
@@ -95,7 +100,6 @@ async def delete_client(
     client = await repo.get_by_id(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
-    # Audit log before deletion
     await ActivityLogService.log_activity(
         db,
         current_user.id,
