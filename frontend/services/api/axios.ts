@@ -1,9 +1,24 @@
 import axios from 'axios';
 
-const PROD_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
+// Determine base URL dynamically. In production, NEXT_PUBLIC_API_URL should be set.
+// For local development we use the same protocol and hostname as the page.
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    // Use HTTP for local development regardless of page protocol to avoid SSL errors
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `http://localhost:8000/`;
+    }
+    // Otherwise use the production URL from env or fallback to same origin
+    return process.env.NEXT_PUBLIC_API_URL || `${protocol}//${hostname}/`;
+  }
+  // Server‑side fallback (e.g., during SSR)
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+};
 
 const api = axios.create({
-  baseURL: PROD_URL,
+  baseURL: getBaseUrl(),
   withCredentials: false,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -16,30 +31,23 @@ const logout = () => {
 
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
-      const h = window.location.hostname;
-      config.baseURL = (h === 'localhost' || h === '127.0.0.1')
-        ? 'http://localhost:8000'
-        : PROD_URL;
-    }
+    // Refresh baseURL on each request in case the hostname changes (e.g., when switching environments)
+    config.baseURL = getBaseUrl();
     const token = localStorage.getItem('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-
-    if (originalRequest.url?.includes('/auth/login')) return Promise.reject(error);
-
+    if (originalRequest?.url?.includes('/auth/login')) return Promise.reject(error);
     if (error.response?.status === 401 && !originalRequest?._retry) {
       const refreshToken = localStorage.getItem('refresh_token');
       if (!refreshToken) { logout(); return Promise.reject(error); }
-
       originalRequest._retry = true;
       try {
         const { data } = await api.post('/auth/refresh', { refresh_token: refreshToken });
@@ -52,10 +60,9 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
     if (error.response?.status === 401) logout();
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;
