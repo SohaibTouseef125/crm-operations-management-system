@@ -275,7 +275,9 @@ export default function BillingLedger() {
         api.get('/billing/invoices'),
         api.get('/billing/payments'),
       ]);
-      setInvoices(invRes.data);
+      // API now returns paginated { total, page, page_size, items } — extract items
+      const invoiceItems = Array.isArray(invRes.data) ? invRes.data : (invRes.data?.items ?? []);
+      setInvoices(invoiceItems);
       setPayments(payRes.data);
     } catch (error) {
       toast.error(formatApiError(error, 'Failed to load billing records'));

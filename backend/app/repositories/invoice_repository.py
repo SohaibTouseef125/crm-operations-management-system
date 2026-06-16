@@ -212,7 +212,8 @@ class InvoiceRepository:
 
     async def mark_sent(self, invoice: Invoice, recipients: List[str]) -> Invoice:
         invoice.status = InvoiceStatus.SENT
-        invoice.sent_at = datetime.now(timezone.utc)
+        # Strip timezone info — DB column is TIMESTAMP WITHOUT TIME ZONE
+        invoice.sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
         for email in recipients:
             rec = InvoiceRecipient(invoice_id=invoice.id, email=email)
             self.db.add(rec)

@@ -14,6 +14,8 @@ from app.routers import (
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.middleware.logging import AuditMiddleware
+from urllib.parse import urlparse, urlunparse
+
 
 
 # ── APScheduler for overdue detection ────────────────────────────────────────
@@ -47,14 +49,38 @@ app = FastAPI(
 # Hugging Face proxy strips https and forwards as http internally.
 # When FastAPI does a 307 trailing-slash redirect it uses the internal http scheme.
 # This middleware rewrites every redirect response to use https.
+from urllib.parse import urlparse, urlunparse
+from fastapi import Request
+
 @app.middleware("http")
-async def force_https_redirects(request: Request, call_next):
+async def force_correct_scheme_redirects(request: Request, call_next):
     response = await call_next(request)
+
     if response.status_code in (301, 302, 307, 308):
-        location = response.headers.get("location", "")
-        if location.startswith("http://"):
-            new_location = location.replace("http://", "https://", 1)
-            response.headers["location"] = new_location
+        location = response.headers.get("location")
+
+        if location:
+            parsed = urlparse(location)
+
+            # agar proxy ya backend http bana raha hai
+            if parsed.scheme == "http":
+                # production detection (proxy headers check)
+                forwarded_proto = request.headers.get("x-forwarded-proto")
+                host = request.headers.get("host", "")
+
+                # decide correct scheme
+                if forwarded_proto:
+                    scheme = forwarded_proto
+                elif "localhost" in host:
+                    scheme = "http"
+                else:
+                    scheme = "https"
+
+                corrected = parsed._replace(scheme=scheme)
+                new_location = urlunparse(corrected)
+
+                response.headers["location"] = new_location
+
     return response
 
 # Add middleware (order matters - first added is outermost)

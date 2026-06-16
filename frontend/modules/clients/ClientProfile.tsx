@@ -110,7 +110,8 @@ export default function ClientProfile({ id }: { id: string }) {
         const reportsRes = await api.get('/reports', { params: { client_id: id } });
 
         setClient(clientRes.data);
-        setInvoices(invoicesRes.data);
+        // invoices API returns paginated response — extract items array
+        setInvoices(Array.isArray(invoicesRes.data) ? invoicesRes.data : (invoicesRes.data?.items ?? []));
         setIssues(issuesRes.data);
         setReports(reportsRes.data);
 
