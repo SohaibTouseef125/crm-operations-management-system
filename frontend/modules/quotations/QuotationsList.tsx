@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
 import { FileText, Plus, ArrowRight, Trash2, XCircle, Mail, Download, Copy } from 'lucide-react';
+import { useAuthStore } from '@/store/auth/useAuthStore';
 
 interface Quotation {
   id: string;
@@ -35,6 +36,10 @@ interface FormItem {
 }
 
 export default function QuotationsList() {
+  const { user } = useAuthStore();
+  const canWrite = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
+  const canDelete = user && ['ADMIN'].includes(user.role);
+  const canConvert = user && ['ADMIN', 'ACCOUNTS'].includes(user.role);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -163,10 +168,12 @@ export default function QuotationsList() {
       {!loading && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-500">{quotations.length} quotation{quotations.length !== 1 ? 's' : ''}</p>
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
-            <Plus size={18} /> New Quotation
-          </button>
+          {canWrite && (
+            <button onClick={() => setShowForm(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
+              <Plus size={18} /> New Quotation
+            </button>
+          )}
         </div>
       )}
 
@@ -322,10 +329,12 @@ export default function QuotationsList() {
           <FileText size={56} className="mx-auto mb-4 text-gray-300" />
           <h3 className="text-lg font-semibold text-gray-900 mb-1">No quotations yet</h3>
           <p className="text-sm text-gray-500 mb-6">Create your first quotation to get started</p>
-          <button onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors">
-            <Plus size={18} /> New Quotation
-          </button>
+          {canWrite && (
+            <button onClick={() => setShowForm(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors">
+              <Plus size={18} /> New Quotation
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3">
@@ -358,18 +367,24 @@ export default function QuotationsList() {
                       className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-md hover:bg-amber-100 text-sm font-medium transition-colors">
                       <Download size={14} /> PDF
                     </button>
-                    <button onClick={() => handleDuplicate(q.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-md hover:bg-cyan-100 text-sm font-medium transition-colors">
-                      <Copy size={14} /> Duplicate
-                    </button>
-                    <button onClick={() => handleConvert(q.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-sm font-medium transition-colors">
-                      <ArrowRight size={14} /> Convert to Invoice
-                    </button>
-                    <button onClick={() => handleDelete(q.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-sm font-medium transition-colors">
-                      <Trash2 size={14} /> Delete
-                    </button>
+                    {canWrite && (
+                      <button onClick={() => handleDuplicate(q.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-md hover:bg-cyan-100 text-sm font-medium transition-colors">
+                        <Copy size={14} /> Duplicate
+                      </button>
+                    )}
+                    {canConvert && (
+                      <button onClick={() => handleConvert(q.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-sm font-medium transition-colors">
+                        <ArrowRight size={14} /> Convert to Invoice
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => handleDelete(q.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-sm font-medium transition-colors">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
 import { Pencil, Trash2, Plus, Package } from 'lucide-react';
+import { useAuthStore } from '@/store/auth/useAuthStore';
 
 interface ProductType {
   id: string;
@@ -18,6 +19,8 @@ interface ProductType {
 }
 
 export default function ProductsList() {
+  const { user } = useAuthStore();
+  const canWrite = user && ['ADMIN', 'BDM'].includes(user.role);
   const [items, setItems] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -66,12 +69,14 @@ export default function ProductsList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <button onClick={() => { setEditItem(null); setForm({ name: '', category: '', description: '', price: 0, tax_percentage: 0 }); setShowForm(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          <Plus size={18} /> Add Product
-        </button>
-      </div>
+      {canWrite && (
+        <div className="flex justify-end">
+          <button onClick={() => { setEditItem(null); setForm({ name: '', category: '', description: '', price: 0, tax_percentage: 0 }); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <Plus size={18} /> Add Product
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -130,9 +135,13 @@ export default function ProductsList() {
               <div className="flex items-center gap-4">
                 <span className="font-bold">Rs. {item.price.toLocaleString()}</span>
                 <span className={`text-xs px-2 py-1 rounded ${item.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{item.status}</span>
-                <button onClick={() => { setEditItem(item); setForm({ name: item.name, category: item.category, description: item.description || '', price: item.price, tax_percentage: item.tax_percentage }); setShowForm(true); }}
-                  className="p-1 hover:bg-gray-100 rounded"><Pencil size={16} /></button>
-                <button onClick={() => handleDelete(item.id)} className="p-1 hover:bg-red-100 rounded text-red-500"><Trash2 size={16} /></button>
+                {canWrite && (
+                  <button onClick={() => { setEditItem(item); setForm({ name: item.name, category: item.category, description: item.description || '', price: item.price, tax_percentage: item.tax_percentage }); setShowForm(true); }}
+                    className="p-1 hover:bg-gray-100 rounded"><Pencil size={16} /></button>
+                )}
+                {canWrite && (
+                  <button onClick={() => handleDelete(item.id)} className="p-1 hover:bg-red-100 rounded text-red-500"><Trash2 size={16} /></button>
+                )}
               </div>
             </div>
           ))}

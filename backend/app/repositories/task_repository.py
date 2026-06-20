@@ -29,11 +29,18 @@ class TaskRepository:
         )
         return result.scalars().first()
 
-    async def get_by_user(self, user_id: UUID) -> List[Task]:
+    async def get_by_user(self, user_id: UUID, client_id: Optional[UUID] = None) -> List[Task]:
+        query = select(Task).options(selectinload(Task.assigned_to)).where(Task.assigned_to_id == user_id)
+        if client_id:
+            query = query.where(Task.client_id == client_id)
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
+    async def get_by_client(self, client_id: UUID) -> List[Task]:
         result = await self.db.execute(
             select(Task)
             .options(selectinload(Task.assigned_to))
-            .where(Task.assigned_to_id == user_id)
+            .where(Task.client_id == client_id)
         )
         return result.scalars().all()
 

@@ -52,7 +52,7 @@ export default function InvoiceDetailPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'ACCOUNTS']}>
+    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS']}>
       <DashboardLayout>
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="mb-4">

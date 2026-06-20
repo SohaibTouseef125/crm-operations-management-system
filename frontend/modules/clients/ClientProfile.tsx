@@ -163,7 +163,7 @@ export default function ClientProfile({ id }: { id: string }) {
           setBalance(null);
         }
 
-        if (user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role)) {
+        if (user && ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS', 'BDM'].includes(user.role)) {
           try {
             const ledgerRes = await api.get(`/billing/clients/${id}/ledger`);
             setLedger(ledgerRes.data.items ?? []);

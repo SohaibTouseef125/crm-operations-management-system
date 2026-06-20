@@ -100,13 +100,13 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Billing',
     href: '/billing',
     iconName: 'CreditCard',
-    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS'],
   },
   {
     name: 'Invoices',
     href: '/invoices',
     iconName: 'FileText',
-    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS'],
   },
   // ── Financial Reports ──
   {
@@ -120,21 +120,21 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Tasks',
     href: '/tasks',
     iconName: 'CheckSquare',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS'],
   },
   // ── Performance ──
   {
     name: 'Performance',
     href: '/performance',
     iconName: 'BarChart2',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   },
   // ── Notifications ──
   {
     name: 'Notifications',
     href: '/notifications',
     iconName: 'Bell',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   },
   // ── Admin-only ──
   {
@@ -165,13 +165,13 @@ export const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/inventory':      ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/components':     ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/issues':         ['ADMIN', 'MANAGER', 'BUSINESS'],
-  '/invoices':            ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
-  '/billing':             ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+  '/invoices':            ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS'],
+  '/billing':             ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS'],
   '/products':            ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
   '/services':            ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
   '/quotations':          ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS'],
   '/financial-reports':   ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS', 'BDM'],
-  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS'],
   '/performance':    ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/notifications':  ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/activity-logs':  ['ADMIN', 'MANAGER'],

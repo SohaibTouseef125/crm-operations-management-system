@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from app.database.session import get_db
 from app.models.task import Task, TaskStatus
@@ -34,14 +34,17 @@ async def get_performance(
 
 @router.get("/", response_model=List[TaskInDB])
 async def read_tasks(
+    client_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     repo = TaskRepository(db)
     if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
+        if client_id:
+            return await repo.get_by_client(client_id)
         return await repo.get_all()
     if current_user.role in TASK_READ_ROLES:
-        return await repo.get_by_user(current_user.id)
+        return await repo.get_by_user(current_user.id, client_id=client_id)
     raise HTTPException(status_code=403, detail="Not enough permissions")
 
 @router.post("/", response_model=TaskInDB)
