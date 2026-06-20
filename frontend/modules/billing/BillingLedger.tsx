@@ -61,6 +61,9 @@ const paymentSchema = z.object({
   client_id: z.string().min(1),
   amount: z.coerce.number().positive('Amount must be positive'),
   payment_date: z.string().min(1, 'Payment date is required'),
+  payment_method: z.string().optional().nullable(),
+  transaction_reference: z.string().optional().nullable(),
+  remarks: z.string().optional().nullable(),
 });
 
 type InvoiceFormData = z.infer<typeof invoiceSchema>;
@@ -95,7 +98,7 @@ function NewInvoiceModal({
     setIsLoading(true);
     setError(null);
     try {
-      await api.post('/billing/invoices', data);
+      await api.post('/invoices', data);
       toast.success('Invoice created successfully');
       onSuccess();
       reset();
@@ -114,7 +117,7 @@ function NewInvoiceModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">New Invoice</h2>
+          <h2 className="text-2xl font-bold text-gray-900">New Billing Entry</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XCircle className="w-5 h-5" /></button>
         </div>
 
@@ -157,7 +160,7 @@ function NewInvoiceModal({
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>
             <button type="submit" disabled={isLoading} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-bold">
-              {isLoading ? 'Creating...' : 'Create Invoice'}
+              {isLoading ? 'Creating...' : 'Create Billing Entry'}
             </button>
           </div>
         </form>
@@ -175,9 +178,9 @@ function RecordPaymentModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PaymentFormData>({
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema) as any,
-    defaultValues: { payment_date: new Date().toISOString().split('T')[0] },
+    defaultValues: { payment_date: new Date().toISOString().split('T')[0], payment_method: 'BANK_TRANSFER' },
   });
 
   useEffect(() => {
@@ -187,6 +190,9 @@ function RecordPaymentModal({
         client_id: invoice.client_id,
         amount: Number(invoice.amount),
         payment_date: new Date().toISOString().split('T')[0],
+        payment_method: 'BANK_TRANSFER',
+        transaction_reference: '',
+        remarks: '',
       });
     }
   }, [invoice, reset]);
@@ -241,6 +247,28 @@ function RecordPaymentModal({
             {errors.payment_date && <p className="mt-1 text-xs text-red-500">{errors.payment_date.message}</p>}
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+            <select {...register('payment_method')} className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+              <option value="CASH">Cash</option>
+              <option value="CHEQUE">Cheque</option>
+              <option value="JAZZCASH">JazzCash</option>
+              <option value="EASYPAISA">Easypaisa</option>
+              <option value="CARD">Card</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Transaction Reference</label>
+            <input type="text" {...register('transaction_reference')} className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Cheque # / Transaction ID" />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Remarks</label>
+            <textarea {...register('remarks')} className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" rows={2} placeholder="Optional notes" />
+          </div>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>
             <button type="submit" disabled={isLoading} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 font-bold">
@@ -272,7 +300,7 @@ export default function BillingLedger() {
   const fetchInvoices = async () => {
     try {
       const [invRes, payRes] = await Promise.all([
-        api.get('/billing/invoices'),
+        api.get('/invoices'),
         api.get('/billing/payments'),
       ]);
       // API now returns paginated { total, page, page_size, items } — extract items
@@ -303,7 +331,7 @@ export default function BillingLedger() {
 
   const handleStatusChange = async (invoiceId: string, status: string) => {
     try {
-      await api.patch(`/billing/invoices/${invoiceId}`, { status });
+      await api.patch(`/invoices/${invoiceId}`, { status });
       fetchInvoices();
       toast.success('Invoice status updated');
     } catch (err) {
@@ -319,7 +347,7 @@ export default function BillingLedger() {
   const handleDeleteInvoice = async (invoiceId: string) => {
     if (!confirm('Permanently delete this invoice?')) return;
     try {
-      await api.delete(`/billing/invoices/${invoiceId}`);
+      await api.delete(`/invoices/${invoiceId}`);
       setInvoices(prev => prev.filter(i => i.id !== invoiceId));
       toast.success('Invoice deleted successfully');
     } catch (err: unknown) {
@@ -394,7 +422,7 @@ export default function BillingLedger() {
                 onClick={() => setIsInvoiceModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm"
               >
-                <Plus className="w-4 h-4" /> New Invoice
+                <Plus className="w-4 h-4" /> New Billing Entry
               </button>
             )}
           </div>

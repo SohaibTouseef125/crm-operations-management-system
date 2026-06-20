@@ -9,6 +9,7 @@ from datetime import datetime
 class TaskStatus(str, enum.Enum):
     PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
+    OVERDUE = "OVERDUE"
     COMPLETED = "COMPLETED"
 
 class TaskPriority(str, enum.Enum):
@@ -24,12 +25,18 @@ class Task(Base, IDMixin, TimestampMixin):
     status: Mapped[TaskStatus] = mapped_column(SQLAlchemyEnum(TaskStatus), default=TaskStatus.PENDING, nullable=False)
     priority: Mapped[TaskPriority] = mapped_column(SQLAlchemyEnum(TaskPriority), default=TaskPriority.MEDIUM, nullable=False)
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    
+
     assigned_to_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
     device_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("devices.id", ondelete="SET NULL"), nullable=True)
-
     client_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("clients.id", ondelete="SET NULL"), nullable=True)
 
-    assigned_to: Mapped["User"] = relationship("User")
+    # Entity links per spec
+    quotation_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("quotations.id", ondelete="SET NULL"), nullable=True)
+    invoice_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("invoices.id", ondelete="SET NULL"), nullable=True)
+    payment_followup_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+
+    assigned_to: Mapped["User"] = relationship("User", foreign_keys=[assigned_to_id])
     device: Mapped[Optional["Device"]] = relationship("Device")
     client: Mapped[Optional["Client"]] = relationship("Client")
+    quotation: Mapped[Optional["Quotation"]] = relationship("Quotation")
+    invoice: Mapped[Optional["Invoice"]] = relationship("Invoice")

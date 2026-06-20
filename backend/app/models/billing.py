@@ -16,6 +16,7 @@ class InvoiceStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     SENT = "SENT"
     PAID = "PAID"
+    PARTIALLY_PAID = "PARTIALLY_PAID"
     OVERDUE = "OVERDUE"
     CANCELLED = "CANCELLED"
 
@@ -65,6 +66,9 @@ class Payment(Base, IDMixin, TimestampMixin):
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     payment_date: Mapped[date] = mapped_column(Date, default=date.today)
     payment_method: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    transaction_reference: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    receipt_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     invoice: Mapped["Invoice"] = relationship(back_populates="payments")
     client: Mapped["Client"] = relationship("Client", back_populates="payments")

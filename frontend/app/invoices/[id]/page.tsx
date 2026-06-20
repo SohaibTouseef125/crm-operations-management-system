@@ -31,20 +31,19 @@ export default function InvoiceDetailPage() {
   const fetchData = useCallback(async () => {
     try {
       const [invRes, payRes] = await Promise.all([
-        api.get(`/billing/invoices/${id}`),
+        api.get(`/invoices/${id}`),
         api.get('/billing/payments', { params: { invoice_id: id } }),
       ]);
       setInvoice(invRes.data);
       setPayments(payRes.data || []);
 
-      // Fetch client
       try {
         const clientRes = await api.get(`/clients/${invRes.data.client_id}`);
         setClient(clientRes.data);
       } catch { /* non-fatal */ }
     } catch (err) {
       toast.error(formatApiError(err, 'Failed to load invoice'));
-      router.push('/billing/invoices');
+      router.push('/invoices');
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +56,7 @@ export default function InvoiceDetailPage() {
       <DashboardLayout>
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="mb-4">
-            <button onClick={() => router.push('/billing/invoices')}
+            <button onClick={() => router.push('/invoices')}
               className="text-sm text-gray-500 hover:text-gray-700">
               ← Back to Invoices
             </button>

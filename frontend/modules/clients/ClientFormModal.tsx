@@ -28,6 +28,14 @@ const clientSchema = z.object({
   crop_cycle_end_date: z.string().optional().nullable(),
   services: z.array(z.string()).default([]),
   farm_location: z.string().optional().nullable(),
+  contact_person: z.string().optional().nullable(),
+  designation: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  ntn: z.string().optional().nullable(),
+  strn: z.string().optional().nullable(),
+  industry: z.string().optional().nullable(),
+  source_of_lead: z.string().optional().nullable(),
 });
 
 type ClientFormData = z.infer<typeof clientSchema>;
@@ -172,6 +180,79 @@ export default function ClientFormModal({
                 className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Contact Person</label>
+              <input
+                {...register('contact_person')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="John Doe"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Designation</label>
+              <input
+                {...register('designation')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Farm Manager"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                {...register('email')}
+                type="email"
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <input
+                {...register('phone')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="+92 300 1234567"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">NTN</label>
+              <input
+                {...register('ntn')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="NTN number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">STRN</label>
+              <input
+                {...register('strn')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="STRN number"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Industry</label>
+              <input
+                {...register('industry')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Agriculture"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Source of Lead</label>
+              <input
+                {...register('source_of_lead')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Referral, Website, etc."
+              />
+            </div>
           </div>
 
           <div>
@@ -194,15 +275,25 @@ export default function ClientFormModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Farm Location / Coordinates</label>
-            <textarea
-              {...register('farm_location')}
-              rows={2}
-              className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="Google Maps link or lat/long"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Address</label>
+              <textarea
+                {...register('address')}
+                rows={2}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Full address"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Farm Location / Coordinates</label>
+              <textarea
+                {...register('farm_location')}
+                rows={2}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                placeholder="Google Maps link or lat/long"
+              />
+            </div>
 
           <div className="flex gap-4 pt-4 border-t">
             <button

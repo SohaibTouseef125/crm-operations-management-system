@@ -10,6 +10,7 @@ class UserRole(str, enum.Enum):
     AGRONOMY = "AGRONOMY"
     HARDWARE = "HARDWARE"
     ACCOUNTS = "ACCOUNTS"
+    BDM = "BDM"
     EMPLOYEE = "EMPLOYEE"
 
 class User(Base, IDMixin, TimestampMixin):

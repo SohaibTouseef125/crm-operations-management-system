@@ -53,13 +53,15 @@ class BillingRepository:
         invoice = result.scalars().first()
         
         if invoice:
-            # Calculate total paid including this new payment
             paid_result = await self.db.execute(
                 select(func.sum(Payment.amount)).where(Payment.invoice_id == invoice_id)
             )
             total_paid = paid_result.scalar() or 0
-            if total_paid + payment_in.amount >= invoice.amount:
+            new_total = total_paid + payment_in.amount
+            if new_total >= invoice.amount:
                 invoice.status = InvoiceStatus.PAID
+            elif new_total > 0:
+                invoice.status = InvoiceStatus.PARTIALLY_PAID
         
         await self.db.commit()
         await self.db.refresh(db_payment)

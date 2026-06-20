@@ -189,14 +189,14 @@ class TestEmailService:
 
     @pytest.mark.asyncio
     async def test_send_raises_without_credentials(self):
-        """RuntimeError raised when SMTP credentials not set."""
+        """RuntimeError raised when RESEND_API_KEY not set."""
         from app.services.email_service import send_invoice_email
 
         invoice = self._make_invoice()
-        with patch("app.core.config.settings") as mock_settings:
-            mock_settings.SMTP_USER = ""
-            mock_settings.SMTP_PASSWORD = ""
-            with pytest.raises(RuntimeError, match="SMTP credentials"):
+        with patch("app.services.email_service.settings") as mock_settings:
+            mock_settings.RESEND_API_KEY = ""
+            mock_settings.FROM_EMAIL = "test@crop2x.com"
+            with pytest.raises(RuntimeError, match="RESEND_API_KEY"):
                 await send_invoice_email(
                     invoice=invoice,
                     pdf_bytes=b"fake_pdf",
@@ -204,24 +204,20 @@ class TestEmailService:
                 )
 
     @pytest.mark.asyncio
-    async def test_send_calls_aiosmtplib(self):
-        """aiosmtplib.send is called with correct parameters."""
+    async def test_send_calls_resend(self):
+        """resend.Emails.send is called with correct parameters."""
         from app.services.email_service import send_invoice_email
 
         invoice = self._make_invoice()
 
-        with patch("app.core.config.settings") as mock_settings:
-            mock_settings.SMTP_USER = "user@example.com"
-            mock_settings.SMTP_PASSWORD = "password"
-            mock_settings.SMTP_HOST = "smtp.example.com"
-            mock_settings.SMTP_PORT = 587
-            mock_settings.SMTP_FROM_EMAIL = "noreply@crop2x.com"
-
-            with patch("aiosmtplib.send", new_callable=AsyncMock) as mock_send:
+        with patch("app.services.email_service.settings") as mock_settings:
+            mock_settings.RESEND_API_KEY = "re_xxxx"
+            mock_settings.FROM_EMAIL = "test@crop2x.com"
+            with patch("app.services.email_service.resend.Emails.send") as mock_send:
                 await send_invoice_email(
                     invoice=invoice,
                     pdf_bytes=b"fake_pdf",
-                    recipients=["client@example.com"],
+                    recipients=["test@example.com"],
                 )
                 mock_send.assert_called_once()
 
@@ -263,14 +259,15 @@ class TestInvoicePermissions:
     """Unit tests for role-based permission logic."""
 
     def test_billing_read_roles(self):
-        """ADMIN, MANAGER, ACCOUNTS can read invoices."""
+        """ADMIN, MANAGER, ACCOUNTS, BDM, BUSINESS can read invoices."""
         from app.core.rbac import BILLING_READ_ROLES
         from app.models.user import UserRole
         assert UserRole.ADMIN in BILLING_READ_ROLES
         assert UserRole.MANAGER in BILLING_READ_ROLES
         assert UserRole.ACCOUNTS in BILLING_READ_ROLES
+        assert UserRole.BDM in BILLING_READ_ROLES
+        assert UserRole.BUSINESS in BILLING_READ_ROLES
         assert UserRole.EMPLOYEE not in BILLING_READ_ROLES
-        assert UserRole.BUSINESS not in BILLING_READ_ROLES
 
     def test_invoice_delete_roles(self):
         """Only ADMIN and MANAGER can delete invoices."""

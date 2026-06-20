@@ -9,7 +9,8 @@ from app.core.config import settings
 from app.database.session import engine, AsyncSessionLocal
 from app.routers import (
     auth, devices, clients, leads, tasks, billing, inventory,
-    users, notifications, activity_logs, dashboard, issues, uploads, reports, components
+    users, notifications, activity_logs, dashboard, issues, uploads, reports, components,
+    invoices, quotations, farms, farmers, payments, products, services
 )
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -108,6 +109,8 @@ app.include_router(clients.router, prefix="/clients", tags=["Clients"])
 app.include_router(leads.router, prefix="/leads", tags=["Leads"])
 app.include_router(tasks.router, prefix="/tasks", tags=["Tasks"])
 app.include_router(billing.router, prefix="/billing", tags=["Billing"])
+app.include_router(invoices.router, prefix="/invoices", tags=["Invoices"])
+app.include_router(quotations.router, prefix="/quotations", tags=["Quotations"])
 app.include_router(inventory.router, prefix="/inventory", tags=["Inventory"])
 app.include_router(components.router, prefix="/components", tags=["Components"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
@@ -115,6 +118,11 @@ app.include_router(activity_logs.router, prefix="/activity-logs", tags=["Activit
 app.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 app.include_router(issues.router, prefix="", tags=["Issues"])
 app.include_router(reports.router, prefix="/reports", tags=["Field Reports"])
+app.include_router(farms.router, prefix="/farms", tags=["Farms"])
+app.include_router(farmers.router, prefix="/farmers", tags=["Farmers"])
+app.include_router(payments.router, prefix="/payments", tags=["Payments"])
+app.include_router(products.router, prefix="/products", tags=["Products"])
+app.include_router(services.router, prefix="/services", tags=["Services"])
 app.include_router(uploads.router, prefix="/uploads", tags=["File Uploads"])
 
 # Mount uploads after routers to avoid route conflicts

@@ -44,6 +44,12 @@ async def mark_overdue_invoices(db: AsyncSession) -> int:
     return count
 
 
+async def run_invoice_automation(db: AsyncSession) -> dict:
+    """Run invoice automation tasks (overdue detection, status cleanup)."""
+    overdue_count = await mark_overdue_invoices(db)
+    return {"overdue_marked": overdue_count}
+
+
 async def run_overdue_job() -> None:
     """
     Entry point for APScheduler. Creates its own DB session.

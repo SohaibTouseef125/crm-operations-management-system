@@ -36,7 +36,7 @@ export default function EmailModal({ invoiceId, invoiceNumber, isOpen, onClose, 
     }
     setLoading(true);
     try {
-      await api.post(`/billing/invoices/${invoiceId}/send`, {
+      await api.post(`/invoices/${invoiceId}/send`, {
         recipients: validRecipients,
         subject,
         message,

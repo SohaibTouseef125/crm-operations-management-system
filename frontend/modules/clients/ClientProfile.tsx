@@ -24,6 +24,15 @@ interface Invoice {
   created_at: string;
 }
 
+interface Quotation {
+  id: string;
+  quote_number: string;
+  grand_total: number;
+  date: string;
+  expiry_date: string;
+  status: string;
+}
+
 interface ClientIssue {
   id: string;
   title: string;
@@ -40,6 +49,14 @@ interface FieldReport {
   notes: string | null;
   created_at: string;
   attachments: string[] | null;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  assigned_to: { id: string; full_name: string } | null;
 }
 
 const PRODUCTION_API_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
@@ -67,19 +84,30 @@ interface Client {
   contract_value: number | null;
   contract_status: string | null;
   devices: Device[];
+  contact_person?: string;
+  designation?: string;
+  email?: string;
+  phone?: string;
+  ntn?: string;
+  strn?: string;
+  industry?: string;
+  source_of_lead?: string;
 }
 
 export default function ClientProfile({ id }: { id: string }) {
   const { user } = useAuthStore();
   const [client, setClient] = useState<Client | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [issues, setIssues] = useState<ClientIssue[]>([]);
   const [reports, setReports] = useState<FieldReport[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [ledger, setLedger] = useState<{ type: string; amount: number; date: string; status?: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('hardware');
 
   const fetchIssues = async () => {
     try {
@@ -105,15 +133,28 @@ export default function ClientProfile({ id }: { id: string }) {
     const fetchClientData = async () => {
       try {
         const clientRes = await api.get(`/clients/${id}`);
-        const invoicesRes = await api.get('/billing/invoices', { params: { client_id: id } });
+        const invoicesRes = await api.get('/invoices', { params: { client_id: id } });
         const issuesRes = await api.get(`/clients/${id}/issues`);
         const reportsRes = await api.get('/reports', { params: { client_id: id } });
 
         setClient(clientRes.data);
-        // invoices API returns paginated response — extract items array
         setInvoices(Array.isArray(invoicesRes.data) ? invoicesRes.data : (invoicesRes.data?.items ?? []));
         setIssues(issuesRes.data);
         setReports(reportsRes.data);
+
+        try {
+          const quotationsRes = await api.get('/quotations', { params: { client_id: id } });
+          setQuotations(Array.isArray(quotationsRes.data) ? quotationsRes.data : (quotationsRes.data?.items ?? []));
+        } catch {
+          setQuotations([]);
+        }
+
+        try {
+          const tasksRes = await api.get('/tasks', { params: { client_id: id } });
+          setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : (tasksRes.data?.items ?? []));
+        } catch {
+          setTasks([]);
+        }
 
         try {
           const balanceRes = await api.get(`/billing/clients/${id}/arrears`);
@@ -144,7 +185,15 @@ export default function ClientProfile({ id }: { id: string }) {
 
   const canLogIssue = user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role);
   const canUploadReport = user && ['ADMIN', 'MANAGER', 'AGRONOMY'].includes(user.role);
-  const canViewLedger = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
+
+  const tabs = [
+    { id: 'hardware', label: 'Hardware' },
+    { id: 'quotations', label: 'Quotations' },
+    { id: 'invoices', label: 'Invoices' },
+    { id: 'payments', label: 'Payments' },
+    { id: 'tasks', label: 'Tasks' },
+    { id: 'reports', label: 'Reports' },
+  ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
@@ -196,6 +245,38 @@ export default function ClientProfile({ id }: { id: string }) {
                 <span className="text-gray-900 font-bold uppercase">{client.contract_status}</span>
               </div>
             )}
+            <div className="flex justify-between text-sm pt-2 border-t">
+              <span className="text-gray-700 font-medium">Contact Person:</span>
+              <span className="text-gray-900">{client.contact_person || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">Designation:</span>
+              <span className="text-gray-900">{client.designation || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">Email:</span>
+              <span className="text-gray-900">{client.email || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">Phone:</span>
+              <span className="text-gray-900">{client.phone || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">NTN:</span>
+              <span className="text-gray-900">{client.ntn || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">STRN:</span>
+              <span className="text-gray-900">{client.strn || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">Industry:</span>
+              <span className="text-gray-900">{client.industry || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-700 font-medium">Source of Lead:</span>
+              <span className="text-gray-900">{client.source_of_lead || 'N/A'}</span>
+            </div>
           </div>
         </div>
 
@@ -239,138 +320,267 @@ export default function ClientProfile({ id }: { id: string }) {
       </div>
 
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900 border-b pb-2 mb-4">Associated Hardware</h2>
-          {client.devices && client.devices.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {client.devices.map((device) => (
-                <div key={device.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex justify-between items-center">
-                  <div>
-                    <p className="font-bold text-gray-900">{device.name}</p>
-                    <p className="text-[10px] text-gray-700 font-bold uppercase tracking-tighter">SN: {device.serial_number}</p>
-                  </div>
-                  <span className="px-2 py-1 text-[10px] font-black rounded-full bg-blue-100 text-blue-800 uppercase">
-                    {device.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No hardware devices currently linked.</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
-            <h2 className="text-xl font-bold text-gray-900 border-b pb-2 mb-4">Financial Status</h2>
-            <div className="flex-1 flex flex-col justify-center">
-              <p className="text-sm text-gray-700 font-medium">Outstanding Balance</p>
-              <p className={`text-4xl font-black mt-1 ${balance && balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {balance !== null ? `$${balance.toLocaleString()}` : '...'}
-              </p>
-              {balance && balance > 0 && (
-                <div className="mt-4 flex items-center text-red-600 bg-red-50 p-2 rounded text-xs font-bold">
-                  <AlertCircle className="w-4 h-4 mr-2" /> Arrears pending
-                </div>
-              )}
-            </div>
+        {(() => {
+          const totalRevenue = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.amount || 0), 0);
+          const outstanding = invoices.filter(i => ['SENT', 'OVERDUE', 'PARTIALLY_PAID'].includes(i.status)).reduce((s, i) => s + Number(i.amount || 0), 0);
+          const paidAmount = totalRevenue;
+          const lastPayment = [...invoices].filter(i => i.status === 'PAID').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+          return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Revenue</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">Rs. {totalRevenue.toLocaleString()}</p>
           </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 border-b pb-2 mb-4">Recent Invoices</h2>
-            <div className="space-y-3">
-              {invoices.slice(0, 3).map((invoice) => (
-                <div key={invoice.id} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded transition-colors border-b border-slate-50 last:border-0">
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">INV-{invoice.id.slice(0, 8).toUpperCase()}</p>
-                    <p className="text-[10px] text-gray-600 font-bold uppercase">{new Date(invoice.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">${Number(invoice.amount || 0).toFixed(2)}</p>
-                    <span className={`text-[10px] font-bold uppercase ${invoice.status === 'PAID' ? 'text-green-600' : 'text-orange-600'}`}>{invoice.status}</span>
-                  </div>
-                </div>
-              ))}
-              {invoices.length === 0 && <p className="text-xs text-gray-600 italic">No invoices found.</p>}
-            </div>
-          </div>
-        </div>
-
-        {canViewLedger && ledger.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 border-b pb-2 mb-4">Payment Ledger</h2>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {ledger.slice(0, 10).map((entry, idx) => (
-                <div key={`${entry.type}-${entry.date}-${idx}`} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0 text-sm">
-                  <span className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded ${entry.type === 'PAYMENT' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {entry.type}
-                  </span>
-                  <span className="font-bold text-gray-900">${Number(entry.amount).toFixed(2)}</span>
-                  <span className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString()}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between border-b pb-2 mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Field Operations & Reports</h2>
-            {canUploadReport && (
-              <button 
-                onClick={() => setIsReportModalOpen(true)}
-                className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-bold shadow-sm"
-              >
-                <Plus className="w-3 h-3 mr-1" /> New Report
-              </button>
-            )}
-          </div>
-          <div className="space-y-4">
-            {reports.length > 0 ? (
-              reports.map((report) => (
-                <div key={report.id} className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 border border-gray-100 hover:border-green-200 transition-colors">
-                  <div className="bg-white p-2 rounded-lg shadow-sm text-green-600 border border-green-50">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-gray-900">{report.title}</h4>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
-                        report.report_type === 'WEEKLY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
-                      }`}>
-                        {report.report_type.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-800 mt-1 leading-relaxed">{report.notes || 'No additional notes provided.'}</p>
-                    <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-2">
-                      <span className="text-[10px] text-gray-700 font-bold uppercase flex items-center">
-                        <Calendar className="w-3 h-3 mr-1" /> {new Date(report.created_at).toLocaleDateString()}
-                      </span>
-                      {report.attachments && report.attachments.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {report.attachments.map((path, idx) => (
-                            <a
-                              key={idx}
-                              href={reportAttachmentUrl(path)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-xs text-blue-600 font-bold hover:underline bg-white px-2 py-1 rounded border border-blue-50 shadow-sm"
-                            >
-                              View Attachment {report.attachments!.length > 1 ? idx + 1 : ''}
-                            </a>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="py-10 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <p className="text-sm text-gray-700 font-medium">No field reports logged for this client.</p>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Outstanding</p>
+            <p className={`text-2xl font-bold mt-1 ${outstanding > 0 ? 'text-red-600' : 'text-green-600'}`}>Rs. {outstanding.toLocaleString()}</p>
+            {outstanding > 0 && (
+              <div className="mt-2 flex items-center text-red-600 bg-red-50 p-1.5 rounded text-xs font-bold">
+                <AlertCircle className="w-3 h-3 mr-1" /> Arrears pending
               </div>
             )}
           </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Paid Amount</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">Rs. {paidAmount.toLocaleString()}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Number of Invoices</p>
+            <p className="text-2xl font-bold mt-1">{invoices.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Last Payment</p>
+            <p className="text-lg font-bold mt-1">{lastPayment ? new Date(lastPayment.created_at).toLocaleDateString() : 'N/A'}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Balance</p>
+            <p className={`text-2xl font-bold mt-1 ${balance && balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              {balance !== null ? `Rs. ${balance.toLocaleString()}` : '...'}
+            </p>
+          </div>
+        </div>
+        );
+      })()}
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex gap-1 sm:gap-2 border-b mb-4 overflow-x-auto whitespace-nowrap scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-2 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 transition-colors flex-shrink-0 ${
+                  activeTab === tab.id
+                    ? 'border-blue-600 text-blue-700'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'hardware' && (
+            <>
+              {client.devices && client.devices.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {client.devices.map((device) => (
+                    <div key={device.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-gray-900">{device.name}</p>
+                        <p className="text-[10px] text-gray-700 font-bold uppercase tracking-tighter">SN: {device.serial_number}</p>
+                      </div>
+                      <span className="px-2 py-1 text-[10px] font-black rounded-full bg-blue-100 text-blue-800 uppercase">
+                        {device.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No hardware devices currently linked.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'quotations' && (
+            <>
+              {quotations.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Quote #</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Amount</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Date</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Expiry</th>
+                        <th className="pb-2 font-bold text-gray-700">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotations.map((q) => (
+                        <tr key={q.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-bold text-gray-900">{q.quote_number}</td>
+                          <td className="py-2 pr-4 text-gray-900">Rs. {Number(q.grand_total).toLocaleString()}</td>
+                          <td className="py-2 pr-4 text-gray-600">{new Date(q.date).toLocaleDateString()}</td>
+                          <td className="py-2 pr-4 text-gray-600">{new Date(q.expiry_date).toLocaleDateString()}</td>
+                          <td className="py-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 uppercase">{q.status}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No quotations found.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'invoices' && (
+            <>
+              {invoices.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Amount</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Status</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Due Date</th>
+                        <th className="pb-2 font-bold text-gray-700">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoices.map((inv) => (
+                        <tr key={inv.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4 font-bold text-gray-900">Rs. {Number(inv.amount).toLocaleString()}</td>
+                          <td className="py-2 pr-4">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                              inv.status === 'PAID' ? 'bg-green-100 text-green-800' : inv.status === 'OVERDUE' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600">{inv.due_date ? new Date(inv.due_date).toLocaleDateString() : 'N/A'}</td>
+                          <td className="py-2 text-gray-600">{new Date(inv.created_at).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No invoices found.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'payments' && (
+            <>
+              {[...ledger].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).length > 0 ? (
+                <div className="space-y-2">
+                  {[...ledger].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((entry, idx) => (
+                    <div key={`${entry.type}-${entry.date}-${idx}`} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0 text-sm">
+                      <span className={`font-bold uppercase text-[10px] px-2 py-0.5 rounded ${entry.type === 'PAYMENT' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {entry.type}
+                      </span>
+                      <span className="font-bold text-gray-900">Rs. {Number(entry.amount).toFixed(2)}</span>
+                      <span className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No payment entries found.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'tasks' && (
+            <>
+              {tasks.length > 0 ? (
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <div key={task.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="flex justify-between items-start">
+                        <p className="font-bold text-gray-900">{task.title}</p>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          task.priority === 'HIGH' ? 'bg-red-100 text-red-700' : task.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                        }`}>
+                          {task.priority}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 mt-2 text-xs text-gray-600">
+                        <span className="font-bold uppercase">{task.status.replace(/_/g, ' ')}</span>
+                        {task.assigned_to && <span>Assigned to: {task.assigned_to.full_name}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No tasks found.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'reports' && (
+            <>
+              <div className="flex items-center justify-between pb-2 mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Field Reports</h3>
+                {canUploadReport && (
+                  <button 
+                    onClick={() => setIsReportModalOpen(true)}
+                    className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-bold shadow-sm"
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> New Report
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4">
+                {reports.length > 0 ? (
+                  reports.map((report) => (
+                    <div key={report.id} className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 border border-gray-100 hover:border-green-200 transition-colors">
+                      <div className="bg-white p-2 rounded-lg shadow-sm text-green-600 border border-green-50">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-gray-900">{report.title}</h4>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                            report.report_type === 'WEEKLY' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {report.report_type.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 mt-1 leading-relaxed">{report.notes || 'No additional notes provided.'}</p>
+                        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-2">
+                          <span className="text-[10px] text-gray-700 font-bold uppercase flex items-center">
+                            <Calendar className="w-3 h-3 mr-1" /> {new Date(report.created_at).toLocaleDateString()}
+                          </span>
+                          {report.attachments && report.attachments.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {report.attachments.map((path, idx) => (
+                                <a
+                                  key={idx}
+                                  href={reportAttachmentUrl(path)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-blue-600 font-bold hover:underline bg-white px-2 py-1 rounded border border-blue-50 shadow-sm"
+                                >
+                                  View Attachment {report.attachments!.length > 1 ? idx + 1 : ''}
+                                </a>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-10 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-sm text-gray-700 font-medium">No field reports logged for this client.</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

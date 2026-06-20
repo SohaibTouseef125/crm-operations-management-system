@@ -8,7 +8,43 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { Plus } from 'lucide-react';
 
-const statuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
+const statuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'];
+
+const STATUS_STYLES: Record<string, string> = {
+  PENDING:     'bg-gray-50 border-gray-200',
+  IN_PROGRESS: 'bg-blue-50 border-blue-200',
+  COMPLETED:   'bg-green-50 border-green-200',
+  OVERDUE:     'bg-red-50 border-red-200',
+};
+
+const STATUS_HEADER_STYLES: Record<string, string> = {
+  PENDING:     'text-gray-700',
+  IN_PROGRESS: 'text-blue-700',
+  COMPLETED:   'text-green-700',
+  OVERDUE:     'text-red-700',
+};
+
+const STATUS_BADGE_STYLES: Record<string, string> = {
+  PENDING:     'bg-gray-200 text-gray-600',
+  IN_PROGRESS: 'bg-blue-200 text-blue-700',
+  COMPLETED:   'bg-green-200 text-green-700',
+  OVERDUE:     'bg-red-200 text-red-700',
+};
+
+const CARD_BORDER_STYLES: Record<string, string> = {
+  PENDING:     'border-gray-100',
+  IN_PROGRESS: 'border-blue-100',
+  COMPLETED:   'border-green-100',
+  OVERDUE:     'border-red-100',
+};
+
+// Mirror backend transition map
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  PENDING:     ['IN_PROGRESS', 'OVERDUE', 'COMPLETED'],
+  IN_PROGRESS: ['COMPLETED', 'OVERDUE'],
+  OVERDUE:     ['PENDING', 'COMPLETED'],
+  COMPLETED:   [],
+};
 
 interface Task {
   id: string;
@@ -17,11 +53,15 @@ interface Task {
   status: string;
   priority: string;
   assigned_to: { full_name: string };
+  client_id?: string | null;
+  quotation_id?: string | null;
+  invoice_id?: string | null;
+  payment_followup_id?: string | null;
 }
 
 export default function TaskBoard() {
   const { user } = useAuthStore();
-  const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS', 'HARDWARE', 'AGRONOMY'].includes(user.role);
+  const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS'].includes(user.role);
   const canDeleteAny = user && ['ADMIN', 'MANAGER'].includes(user.role);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,10 +120,10 @@ export default function TaskBoard() {
 
       <div className="flex space-x-6 overflow-x-auto pb-6">
         {statuses.map((status) => (
-          <div key={status} className="flex-shrink-0 w-80 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div key={status} className={`flex-shrink-0 w-80 p-4 rounded-xl border ${STATUS_STYLES[status] || 'bg-gray-50 border-gray-200'}`}>
             <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wider">{status.replace(/_/g, ' ')}</h3>
-              <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-black">
+              <h3 className={`font-bold text-sm uppercase tracking-wider ${STATUS_HEADER_STYLES[status] || 'text-gray-700'}`}>{status.replace(/_/g, ' ')}</h3>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${STATUS_BADGE_STYLES[status] || 'bg-gray-200 text-gray-600'}`}>
                 {tasks.filter((t) => t.status === status).length}
               </span>
             </div>
@@ -91,7 +131,7 @@ export default function TaskBoard() {
               {tasks
                 .filter((task) => task.status === status)
                 .map((task) => (
-                  <div key={task.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+                  <div key={task.id} className={`bg-white p-4 rounded-lg shadow-sm border hover:shadow-md transition-shadow group ${CARD_BORDER_STYLES[task.status] || 'border-gray-100'}`}>
                     <div className="flex justify-between items-start mb-2">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
                         task.priority === 'HIGH' ? 'bg-red-100 text-red-700' : 
@@ -110,14 +150,28 @@ export default function TaskBoard() {
                     </div>
                     <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors text-sm">{task.title}</h4>
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{task.description || 'No description provided.'}</p>
-                    <div className="mt-4 pt-3 border-t border-slate-50 flex justify-between items-center">
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {task.client_id && (
+                        <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">Client: {task.client_id.substring(0, 8)}</span>
+                      )}
+                      {task.quotation_id && (
+                        <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-medium">Quote: {task.quotation_id.substring(0, 8)}</span>
+                      )}
+                      {task.invoice_id && (
+                        <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Invoice: {task.invoice_id.substring(0, 8)}</span>
+                      )}
+                      {task.payment_followup_id && (
+                        <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">Payment: {task.payment_followup_id.substring(0, 8)}</span>
+                      )}
+                    </div>
+                    <div className="mt-2 pt-3 border-t border-slate-50 flex justify-between items-center">
                       <span className="text-[10px] text-gray-400 font-medium">Assigned: <strong className="text-slate-600">{task.assigned_to.full_name}</strong></span>
                       <select 
                         value={task.status} 
                         onChange={(e) => updateStatus(task.id, e.target.value)}
                         className="text-[10px] border border-slate-200 rounded bg-slate-50 outline-none p-0.5 font-bold text-slate-600"
                       >
-                        {statuses.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
+                        {(ALLOWED_TRANSITIONS[task.status] || [task.status]).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
                       </select>
                     </div>
                   </div>

@@ -58,7 +58,7 @@ export default function InvoiceDetail({ invoice, client, payments, onRefresh }: 
   const handleDownloadPDF = async () => {
     setPdfLoading(true);
     try {
-      const res = await api.post(`/billing/invoices/${invoice.id}/pdf`, {}, { responseType: 'blob' });
+      const res = await api.post(`/invoices/${invoice.id}/pdf`, {}, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const a = document.createElement('a');
       a.href = url;
@@ -75,7 +75,7 @@ export default function InvoiceDetail({ invoice, client, payments, onRefresh }: 
   const handlePreviewPDF = async () => {
     setPdfLoading(true);
     try {
-      const res = await api.post(`/billing/invoices/${invoice.id}/pdf`, {}, { responseType: 'blob' });
+      const res = await api.post(`/invoices/${invoice.id}/pdf`, {}, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       window.open(url, '_blank');
     } catch (err) {
@@ -89,9 +89,9 @@ export default function InvoiceDetail({ invoice, client, payments, onRefresh }: 
   const handleDelete = async () => {
     if (!confirm(`Delete invoice ${invoiceNumber}? This cannot be undone.`)) return;
     try {
-      await api.delete(`/billing/invoices/${invoice.id}`);
+      await api.delete(`/invoices/${invoice.id}`);
       toast.success('Invoice deleted');
-      router.push('/billing/invoices');
+      router.push('/invoices');
     } catch (err) {
       toast.error(formatApiError(err, 'Failed to delete invoice'));
     }
@@ -147,7 +147,7 @@ export default function InvoiceDetail({ invoice, client, payments, onRefresh }: 
 
           {/* Edit */}
           {canEdit && isEditable && (
-            <Link href={`/billing/invoices/${invoice.id}/edit`}
+            <Link href={`/invoices/${invoice.id}/edit`}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-sm font-bold hover:bg-orange-600 transition-colors">
               <Edit className="w-3.5 h-3.5" /> Edit
             </Link>
@@ -240,7 +240,7 @@ export default function InvoiceDetail({ invoice, client, payments, onRefresh }: 
                 {invoice.items.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-5 py-8 text-center text-sm text-gray-400 italic">
-                      No line items. {isEditable && <Link href={`/billing/invoices/${invoice.id}/edit`} className="text-blue-600 hover:underline">Add items →</Link>}
+                      No line items. {isEditable && <Link href={`/invoices/${invoice.id}/edit`} className="text-blue-600 hover:underline">Add items →</Link>}
                     </td>
                   </tr>
                 ) : (

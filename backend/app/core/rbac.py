@@ -5,14 +5,28 @@ CLIENT_READ_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.BUSINESS,
+    UserRole.BDM,
     UserRole.AGRONOMY,
     UserRole.ACCOUNTS,
 ]
 
-CLIENT_WRITE_ROLES = [
+CLIENT_CREATE_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.BUSINESS,
+    UserRole.BDM,
+]
+
+CLIENT_UPDATE_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.BUSINESS,
+    UserRole.BDM,
+    UserRole.AGRONOMY,
+]
+
+CLIENT_DELETE_ROLES = [
+    UserRole.ADMIN,
 ]
 
 DEVICE_READ_ROLES = [
@@ -28,10 +42,26 @@ DEVICE_WRITE_ROLES = [
     UserRole.HARDWARE,
 ]
 
+INVOICE_READ_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.ACCOUNTS,
+    UserRole.BDM,
+    UserRole.BUSINESS,
+]
+
+INVOICE_WRITE_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.ACCOUNTS,
+]
+
 BILLING_READ_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.ACCOUNTS,
+    UserRole.BDM,
+    UserRole.BUSINESS,
 ]
 
 BILLING_WRITE_ROLES = [
@@ -55,6 +85,9 @@ REPORT_READ_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.AGRONOMY,
+    UserRole.BUSINESS,
+    UserRole.ACCOUNTS,
+    UserRole.BDM,
 ]
 
 ISSUE_READ_ROLES = [
@@ -66,3 +99,21 @@ ISSUE_READ_ROLES = [
 ]
 
 PUBLIC_REGISTER_ROLES = [UserRole.EMPLOYEE]
+
+TASK_READ_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.BUSINESS,
+    UserRole.BDM,
+    UserRole.AGRONOMY,
+    UserRole.HARDWARE,
+    UserRole.ACCOUNTS,
+    UserRole.EMPLOYEE,
+]
+
+TASK_CREATE_ROLES = [
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.BUSINESS,
+    UserRole.ACCOUNTS,
+]

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.issue import ClientIssue
     from app.models.billing import Invoice, Payment
     from app.models.report import FieldReport
+    from app.models.quotation import Quotation
 
 class ContractStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
@@ -22,6 +23,14 @@ class Client(Base, IDMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String, nullable=False)
     company_name: Mapped[str] = mapped_column(String, nullable=False)
+    contact_person: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    designation: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    ntn: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    strn: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    industry: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    source_of_lead: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     farm_size: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     address: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     contact_info: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -31,7 +40,6 @@ class Client(Base, IDMixin, TimestampMixin):
     farm_location: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     third_party_credentials: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     contract_value: Mapped[Optional[float]] = mapped_column(Float, default=0.0, nullable=True)
-    # Contract tracking fields
     contract_start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     contract_end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     contract_status: Mapped[Optional[ContractStatus]] = mapped_column(SQLAlchemyEnum(ContractStatus), nullable=True)
@@ -43,3 +51,4 @@ class Client(Base, IDMixin, TimestampMixin):
     invoices: Mapped[List["Invoice"]] = relationship("Invoice", back_populates="client", cascade="all, delete-orphan")
     payments: Mapped[List["Payment"]] = relationship("Payment", back_populates="client", cascade="all, delete-orphan")
     field_reports: Mapped[List["FieldReport"]] = relationship("FieldReport", back_populates="client", cascade="all, delete-orphan")
+    quotations: Mapped[List["Quotation"]] = relationship("Quotation", back_populates="client", cascade="all, delete-orphan")

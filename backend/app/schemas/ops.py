@@ -16,6 +16,9 @@ class TaskBase(BaseModel):
     assigned_to_id: UUID
     device_id: Optional[UUID] = None
     client_id: Optional[UUID] = None
+    quotation_id: Optional[UUID] = None
+    invoice_id: Optional[UUID] = None
+    payment_followup_id: Optional[UUID] = None
 
     @field_validator("due_date", mode="before")
     @classmethod
@@ -40,6 +43,9 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = None
     due_date: Optional[datetime] = None
     assigned_to_id: Optional[UUID] = None
+    quotation_id: Optional[UUID] = None
+    invoice_id: Optional[UUID] = None
+    payment_followup_id: Optional[UUID] = None
 
     @field_validator("due_date", mode="before")
     @classmethod
@@ -100,6 +106,7 @@ class InvoiceUpdate(BaseModel):
 
 class InvoiceInDB(InvoiceBase):
     id: UUID
+    client_id: Optional[UUID] = None
     created_at: datetime
 
     class Config:
@@ -111,6 +118,9 @@ class PaymentBase(BaseModel):
     amount: Decimal
     payment_date: date = date.today()
     payment_method: Optional[str] = None
+    transaction_reference: Optional[str] = None
+    receipt_url: Optional[str] = None
+    remarks: Optional[str] = None
 
     @field_validator("amount")
     @classmethod
@@ -124,6 +134,7 @@ class PaymentCreate(PaymentBase):
 
 class PaymentInDB(PaymentBase):
     id: UUID
+    client_id: Optional[UUID] = None
     created_at: datetime
 
     class Config:

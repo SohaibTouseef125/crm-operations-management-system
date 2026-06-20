@@ -32,7 +32,7 @@ export default function InvoiceList() {
       const params: Record<string, string | number> = { page, page_size: PAGE_SIZE };
       if (search) params.search = search;
       if (statusFilter !== 'ALL') params.status = statusFilter;
-      const res = await api.get('/billing/invoices', { params });
+      const res = await api.get('/invoices', { params });
       setData(res.data);
     } catch (err) {
       toast.error(formatApiError(err, 'Failed to load invoices'));
@@ -76,7 +76,7 @@ export default function InvoiceList() {
             />
           </div>
           {canCreate && (
-            <Link href="/billing/invoices/new"
+            <Link href="/invoices/new"
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
               <Plus className="w-4 h-4" /> New Invoice
             </Link>
@@ -106,7 +106,7 @@ export default function InvoiceList() {
                 data?.items.map(inv => (
                   <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-3 text-sm font-bold text-blue-600">
-                      <Link href={`/billing/invoices/${inv.id}`} className="hover:underline">
+                      <Link href={`/invoices/${inv.id}`} className="hover:underline">
                         {inv.invoice_number || `INV-${inv.id.slice(0, 8).toUpperCase()}`}
                       </Link>
                     </td>
@@ -124,7 +124,7 @@ export default function InvoiceList() {
                       <InvoiceStatusBadge status={inv.status} />
                     </td>
                     <td className="px-5 py-3">
-                      <Link href={`/billing/invoices/${inv.id}`}
+                      <Link href={`/invoices/${inv.id}`}
                         className="text-xs font-bold text-blue-600 hover:text-blue-800">
                         View →
                       </Link>

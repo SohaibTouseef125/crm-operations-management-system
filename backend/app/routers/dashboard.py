@@ -36,6 +36,8 @@ async def get_dashboard_stats(
         return await _hardware_dashboard(db)
     elif role == UserRole.ACCOUNTS:
         return await _accounts_dashboard(db)
+    elif role == UserRole.BDM:
+        return await _business_dashboard(db)
     else:
         # EMPLOYEE — basic task stats
         tasks_result = await db.execute(
@@ -199,16 +201,30 @@ async def _accounts_dashboard(db: AsyncSession) -> dict:
     today = date.today()
     thirty_days = today + timedelta(days=30)
 
+    # Total clients
+    clients_r = await db.execute(select(func.count(Client.id)))
+    stats["total_clients"] = clients_r.scalar()
+
     # Total revenue (PAID invoices)
     revenue_r = await db.execute(
-        select(func.sum(Invoice.amount)).where(Invoice.status == InvoiceStatus.PAID)
+        select(func.sum(Invoice.total_amount)).where(Invoice.status == InvoiceStatus.PAID)
     )
     stats["total_revenue"] = float(revenue_r.scalar() or 0)
 
-    # Outstanding (SENT + OVERDUE)
+    # Monthly revenue (current month)
+    first_of_month = today.replace(day=1)
+    monthly_r = await db.execute(
+        select(func.sum(Payment.amount)).where(
+            Payment.payment_date >= first_of_month,
+            Payment.payment_date <= today,
+        )
+    )
+    stats["monthly_revenue"] = float(monthly_r.scalar() or 0)
+
+    # Outstanding (SENT + OVERDUE + PARTIALLY_PAID)
     outstanding_r = await db.execute(
-        select(func.sum(Invoice.amount)).where(
-            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.OVERDUE])
+        select(func.sum(Invoice.total_amount)).where(
+            Invoice.status.in_([InvoiceStatus.SENT, InvoiceStatus.OVERDUE, InvoiceStatus.PARTIALLY_PAID])
         )
     )
     total_outstanding = float(outstanding_r.scalar() or 0)
@@ -220,6 +236,15 @@ async def _accounts_dashboard(db: AsyncSession) -> dict:
     stats["outstanding_balance"] = total_outstanding
     stats["total_paid"] = total_paid
     stats["arrears"] = max(0, total_outstanding - total_paid)
+
+    # Collection rate
+    total_invoiced_r = await db.execute(
+        select(func.sum(Invoice.total_amount)).where(
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID, InvoiceStatus.SENT, InvoiceStatus.OVERDUE])
+        )
+    )
+    total_invoiced = float(total_invoiced_r.scalar() or 1)
+    stats["collection_rate"] = round((total_paid / total_invoiced) * 100, 1) if total_invoiced > 0 else 0
 
     # Overdue invoices
     overdue_r = await db.execute(
@@ -236,6 +261,12 @@ async def _accounts_dashboard(db: AsyncSession) -> dict:
         )
     )
     stats["due_next_30_days"] = due_soon_r.scalar()
+
+    # Invoice status breakdown
+    invoice_status_r = await db.execute(
+        select(Invoice.status, func.count(Invoice.id)).group_by(Invoice.status)
+    )
+    stats["invoices_by_status"] = {s.value if hasattr(s, 'value') else s: c for s, c in invoice_status_r.all()}
 
     return stats
 

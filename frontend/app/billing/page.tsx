@@ -4,7 +4,7 @@ import BillingLedger from '@/modules/billing/BillingLedger';
 
 export default function BillingPage() {
   return (
-    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'ACCOUNTS']}>
+    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM', 'BUSINESS']}>
       <DashboardLayout>
         <div className="p-4 space-y-6 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between">

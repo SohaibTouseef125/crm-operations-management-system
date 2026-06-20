@@ -13,7 +13,21 @@ interface Client {
   id: string;
   name: string;
   company_name: string;
+  farm_size?: number | null;
+  address?: string | null;
+  contact_info?: string | null;
   onboarding_date: string | null;
+  crop_cycle_end_date?: string | null;
+  services?: string[];
+  farm_location?: string | null;
+  contact_person?: string | null;
+  designation?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  ntn?: string | null;
+  strn?: string | null;
+  industry?: string | null;
+  source_of_lead?: string | null;
 }
 
 export default function ClientList() {

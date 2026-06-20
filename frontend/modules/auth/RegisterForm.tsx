@@ -10,7 +10,7 @@ import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 
-const roles = ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'] as const;
+const roles = ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'] as const;
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),

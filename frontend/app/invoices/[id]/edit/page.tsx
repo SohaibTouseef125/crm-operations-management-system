@@ -17,11 +17,11 @@ export default function EditInvoicePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    api.get(`/billing/invoices/${id}`)
+    api.get(`/invoices/${id}`)
       .then(res => setInvoice(res.data))
       .catch(err => {
         toast.error(formatApiError(err, 'Failed to load invoice'));
-        router.push('/billing/invoices');
+        router.push('/invoices');
       })
       .finally(() => setIsLoading(false));
   }, [id, router]);
@@ -29,8 +29,7 @@ export default function EditInvoicePage() {
   const handleUpdate = async (data: InvoiceFormData) => {
     if (!invoice) return;
 
-    // Update invoice metadata
-    await api.patch(`/billing/invoices/${invoice.id}`, {
+    await api.patch(`/invoices/${invoice.id}`, {
       invoice_date: data.invoice_date,
       due_date: data.due_date,
       tax_percentage: data.tax_percentage,
@@ -39,15 +38,14 @@ export default function EditInvoicePage() {
       notes: data.notes,
     });
 
-    // Sync line items: delete all existing, re-add new ones
     const existingItems = invoice.items || [];
     for (const item of existingItems) {
-      await api.delete(`/billing/invoices/${invoice.id}/items/${item.id}`);
+      await api.delete(`/invoices/${invoice.id}/items/${item.id}`);
     }
     for (let idx = 0; idx < data.items.length; idx++) {
       const item = data.items[idx];
       if (!item.item_name.trim()) continue;
-      await api.post(`/billing/invoices/${invoice.id}/items`, {
+      await api.post(`/invoices/${invoice.id}/items`, {
         item_name: item.item_name,
         description: item.description || null,
         unit_price: item.unit_price,
@@ -56,7 +54,7 @@ export default function EditInvoicePage() {
     }
 
     toast.success('Invoice updated successfully');
-    router.push(`/billing/invoices/${invoice.id}`);
+    router.push(`/invoices/${invoice.id}`);
   };
 
   const isDraft = invoice?.status === 'DRAFT';

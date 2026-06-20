@@ -17,12 +17,19 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     iconName: 'LayoutDashboard',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   },
   // ── Clients ──
   {
     name: 'Clients',
     href: '/clients',
+    iconName: 'Users',
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'ACCOUNTS'],
+  },
+  // ── Farmers ──
+  {
+    name: 'Farmers',
+    href: '/farmers',
     iconName: 'Users',
     roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
   },
@@ -31,7 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Leads & Pipeline',
     href: '/leads',
     iconName: 'TrendingUp',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'ACCOUNTS'],
   },
   // ── Agronomy ──
   {
@@ -67,25 +74,53 @@ export const NAV_ITEMS: NavItem[] = [
     iconName: 'AlertCircle',
     roles: ['ADMIN', 'MANAGER', 'BUSINESS'],
   },
+  // ── Products ──
+  {
+    name: 'Products',
+    href: '/products',
+    iconName: 'Package',
+    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS'],
+  },
+  // ── Services ──
+  {
+    name: 'Services',
+    href: '/services',
+    iconName: 'Wrench',
+    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS'],
+  },
+  // ── Quotations ──
+  {
+    name: 'Quotations',
+    href: '/quotations',
+    iconName: 'FileText',
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS'],
+  },
   // ── Billing ──
   {
     name: 'Billing',
     href: '/billing',
     iconName: 'CreditCard',
-    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
   },
   {
     name: 'Invoices',
-    href: '/billing/invoices',
+    href: '/invoices',
     iconName: 'FileText',
-    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+  },
+  // ── Financial Reports ──
+  {
+    name: 'Financial Reports',
+    href: '/financial-reports',
+    iconName: 'BarChart2',
+    roles: ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS', 'BDM'],
   },
   // ── Tasks ──
   {
     name: 'Tasks',
     href: '/tasks',
     iconName: 'CheckSquare',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   },
   // ── Performance ──
   {
@@ -121,22 +156,27 @@ export const NAV_ITEMS: NavItem[] = [
  * Prefix matching: /devices matches /devices/[id] etc.
  */
 export const ROUTE_ROLES: Record<string, UserRole[]> = {
-  '/dashboard':      ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
-  '/clients':        ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
-  '/leads':          ['ADMIN', 'MANAGER', 'BUSINESS'],
+  '/dashboard':      ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/clients':        ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'ACCOUNTS'],
+  '/farmers':        ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
+  '/leads':          ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'ACCOUNTS'],
   '/reports':        ['ADMIN', 'MANAGER', 'AGRONOMY'],
   '/devices':        ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'],
   '/inventory':      ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/components':     ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/issues':         ['ADMIN', 'MANAGER', 'BUSINESS'],
-  '/billing':              ['ADMIN', 'MANAGER', 'ACCOUNTS'],
-  '/billing/invoices':     ['ADMIN', 'MANAGER', 'ACCOUNTS'],
-  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
-  '/performance':    ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
-  '/notifications':  ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/invoices':            ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+  '/billing':             ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BDM'],
+  '/products':            ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
+  '/services':            ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
+  '/quotations':          ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS'],
+  '/financial-reports':   ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS', 'BDM'],
+  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/performance':    ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/notifications':  ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/activity-logs':  ['ADMIN', 'MANAGER'],
   '/users':          ['ADMIN', 'MANAGER'],
-  '/unauthorized':   ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
+  '/unauthorized':   ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
 };
 
 export function hasRouteAccess(pathname: string, role: UserRole): boolean {

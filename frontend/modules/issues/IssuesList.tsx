@@ -185,10 +185,10 @@ export default function IssuesList() {
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors ${
+              className={`px-2 sm:px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-colors ${
                 statusFilter === s ? 'bg-blue-600 text-white' : 'bg-white border text-gray-700 hover:bg-gray-50'
               }`}>
               {s.replace(/_/g, ' ')}
@@ -197,18 +197,18 @@ export default function IssuesList() {
         </div>
         {canCreate && (
           <button onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-sm text-sm">
-            <Plus className="w-4 h-4 mr-2" /> Log Issue
+            className="flex items-center px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold shadow-sm text-xs sm:text-sm">
+            <Plus className="w-4 h-4 mr-1.5" /> Log Issue
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-100">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="min-w-[640px] w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
-              {['Issue', 'Client', 'Priority', 'Status', 'Date', ''].map(h => (
-                <th key={h} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">{h}</th>
+              {['Issue', 'Client', 'Priority', 'Status', 'Date', ''].map((h, i) => (
+                <th key={h} className={`px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider ${i >= 4 ? 'hidden sm:table-cell' : ''}`}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -252,10 +252,10 @@ export default function IssuesList() {
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-4 text-xs text-gray-500">
+                <td className="px-5 py-4 text-xs text-gray-500 hidden sm:table-cell">
                   {new Date(issue.created_at).toLocaleDateString()}
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-5 py-4 text-right hidden sm:table-cell">
                   <Link href={`/clients/${issue.client_id}`}
                     className="text-xs text-blue-600 hover:text-blue-800 font-bold">
                     View Client

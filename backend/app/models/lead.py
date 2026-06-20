@@ -7,23 +7,23 @@ import uuid
 from datetime import datetime
 
 class LeadStage(str, enum.Enum):
-    NEW_LEAD = "NEW_LEAD"
-    CONTACTED = "CONTACTED"
-    MEETING_SCHEDULED = "MEETING_SCHEDULED"
-    PROPOSAL_SENT = "PROPOSAL_SENT"
-    NEGOTIATION = "NEGOTIATION"
-    WON = "WON"
-    LOST = "LOST"
+    DISCOVERY = "discovery"
+    OUTREACH = "outreach"
+    QUOTATION_REQUESTED = "quotation_requested"
+    QUOTATION_FORWARDED = "quotation_forwarded"
+    IN_NEGOTIATION = "in-negotiation"
+    WON = "won"
+    LOST = "lost"
 
 # Valid forward transitions for lead stages
 LEAD_STAGE_TRANSITIONS: dict[str, list[str]] = {
-    "NEW_LEAD":           ["CONTACTED", "LOST"],
-    "CONTACTED":          ["MEETING_SCHEDULED", "NEGOTIATION", "LOST"],
-    "MEETING_SCHEDULED":  ["PROPOSAL_SENT", "NEGOTIATION", "LOST"],
-    "PROPOSAL_SENT":      ["NEGOTIATION", "WON", "LOST"],
-    "NEGOTIATION":        ["WON", "LOST", "PROPOSAL_SENT"],
-    "WON":                [],
-    "LOST":               ["NEW_LEAD"],  # allow re-open
+    "discovery": ["outreach", "lost"],
+    "outreach": ["quotation_requested", "lost"],
+    "quotation_requested": ["quotation_forwarded", "lost"],
+    "quotation_forwarded": ["in-negotiation", "won", "lost"],
+    "in-negotiation": ["won", "lost"],
+    "won": [],
+    "lost": ["discovery"],
 }
 
 class LeadActivityType(str, enum.Enum):
@@ -34,17 +34,35 @@ class LeadActivityType(str, enum.Enum):
 class Lead(Base, IDMixin, TimestampMixin):
     __tablename__ = "leads"
 
+    # CRM assignment (mandatory per spec)
+    assigned_to_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+
+    assigned_to: Mapped["User"] = relationship("User", foreign_keys=[assigned_to_id])
+
+    # Basic contact fields (spec: contact_mobile mandatory)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    company_name: Mapped[str] = mapped_column(String, nullable=False)
-    stage: Mapped[LeadStage] = mapped_column(SQLAlchemyEnum(LeadStage), default=LeadStage.NEW_LEAD, nullable=False)
-    contact_info: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    contact_mobile: Mapped[str] = mapped_column(String, nullable=False)
+    company_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    follow_up_date: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
-    quotation_amount: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    proposal_link: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    service_tags: Mapped[Optional[list[str]]] = mapped_column(JSON, nullable=True)
+    location: Mapped[str] = mapped_column(String, nullable=False)
+    address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    # Lead pipeline fields
+    stage: Mapped[LeadStage] = mapped_column(SQLAlchemyEnum(LeadStage, validate_strings=False, values_callable=lambda x: [e.value for e in x]), default=LeadStage.DISCOVERY, nullable=False)
+    next_follow_up: Mapped[Optional[Date]] = mapped_column(Date, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes_log: Mapped[Optional[JSON]] = mapped_column(JSON, nullable=True)
+
+    # Service interest (spec: services_interested with strict list)
+    services_interested: Mapped[Optional[list[str]]] = mapped_column(JSON, nullable=True)
+    other_services: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Quotation handover fields
+    quotation_file_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    quotation_requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    quotation_uploaded_by: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("users.id"), nullable=True)
+
     client_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("clients.id"), nullable=True)
 
     client: Mapped[Optional["Client"]] = relationship(back_populates="leads")

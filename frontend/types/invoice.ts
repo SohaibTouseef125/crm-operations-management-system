@@ -1,4 +1,4 @@
-export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'PARTIALLY_PAID' | 'OVERDUE' | 'CANCELLED';
 
 export interface InvoiceItem {
   id: string;
@@ -56,6 +56,7 @@ export interface InvoiceFormData {
   client_id: string;
   invoice_date: string;
   due_date: string;
+  status: string;
   tax_percentage: number;
   payment_terms: string;
   bank_details: string;

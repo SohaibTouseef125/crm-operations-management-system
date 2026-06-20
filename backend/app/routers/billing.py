@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List, Optional
@@ -8,317 +7,20 @@ from decimal import Decimal
 
 from app.database.session import get_db
 from app.repositories.billing_repository import BillingRepository
-from app.repositories.invoice_repository import InvoiceRepository
-from app.schemas.ops import InvoiceCreate, InvoiceUpdate, InvoiceInDB, PaymentCreate, PaymentInDB
-from app.schemas.invoice import (
-    InvoiceCreateV2, InvoiceUpdateV2, InvoiceDetailResponse, InvoiceItemCreate,
-    InvoiceItemUpdate, InvoiceItemInDB, InvoiceSendRequest, PaginatedInvoiceResponse,
-)
-from app.models.user import User, UserRole
+from app.schemas.ops import PaymentCreate, PaymentInDB
+from app.schemas.invoice import InvoiceDetailResponse
+from app.models.user import User
 from app.models.billing import Invoice, Payment, InvoiceStatus
 from app.models.client import Client
 from app.routers.deps import check_role
-from app.core.rbac import BILLING_READ_ROLES, BILLING_WRITE_ROLES, INVOICE_DELETE_ROLES, INVOICE_SEND_ROLES
+from app.core.rbac import BILLING_READ_ROLES, BILLING_WRITE_ROLES
 from app.services.activity_log_service import ActivityLogService
-from app.services.overdue_service import mark_overdue_invoices
 
 router = APIRouter()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# EXISTING ENDPOINTS — preserved for backward compatibility
-# ══════════════════════════════════════════════════════════════════════════════
-
-@router.get("/invoices", response_model=PaginatedInvoiceResponse)
-async def read_invoices(
-    client_id: Optional[UUID] = None,
-    search: Optional[str] = None,
-    status: Optional[InvoiceStatus] = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
-):
-    """
-    List invoices with optional search, status filter, and pagination.
-    Backward-compatible: callers without query params receive all invoices (page 1, size 20).
-    """
-    repo = InvoiceRepository(db)
-
-    # If client_id is provided without pagination intent, return all for that client
-    if client_id and not search and not status:
-        legacy_repo = BillingRepository(db)
-        legacy_invoices = await legacy_repo.get_invoices(client_id)
-        return PaginatedInvoiceResponse(
-            total=len(legacy_invoices),
-            page=1,
-            page_size=len(legacy_invoices) or 20,
-            items=legacy_invoices,
-        )
-
-    total, invoices = await repo.get_invoices_paginated(
-        search=search, status=status, page=page, page_size=page_size
-    )
-    return PaginatedInvoiceResponse(total=total, page=page, page_size=page_size, items=invoices)
-
-
-@router.post("/invoices", response_model=InvoiceDetailResponse, status_code=201)
-async def create_invoice(
-    invoice_in: InvoiceCreateV2,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.create_invoice_v2(invoice_in)
-    await ActivityLogService.log_activity(
-        db, current_user.id, current_user.full_name, "CREATE", "Invoice",
-        f"Created invoice {invoice.invoice_number} for client {invoice.client_id} amount {invoice.total_amount}",
-        entity_id=invoice.id,
-    )
-    return invoice
-
-
-@router.get("/invoices/{invoice_id}", response_model=InvoiceDetailResponse)
-async def read_invoice(
-    invoice_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    return invoice
-
-
-@router.patch("/invoices/{invoice_id}", response_model=InvoiceDetailResponse)
-async def update_invoice(
-    invoice_id: UUID,
-    invoice_in: InvoiceUpdateV2,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    db_invoice = await repo.get_invoice_with_items(invoice_id)
-    if not db_invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if db_invoice.status == InvoiceStatus.PAID and invoice_in.status and invoice_in.status != InvoiceStatus.PAID:
-        raise HTTPException(status_code=422, detail="Cannot change status of a paid invoice")
-    previous = {"status": db_invoice.status.value, "amount": str(db_invoice.total_amount or db_invoice.amount)}
-    updated = await repo.update_invoice_v2(db_invoice, invoice_in)
-    await ActivityLogService.log_activity(
-        db, current_user.id, current_user.full_name, "UPDATE", "Invoice",
-        f"Updated invoice {invoice_id}",
-        entity_id=invoice_id,
-        previous_value=str(previous),
-        new_value=str(invoice_in.model_dump(exclude_unset=True)),
-    )
-    return updated
-
-
-@router.delete("/invoices/{invoice_id}")
-async def delete_invoice(
-    invoice_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(INVOICE_DELETE_ROLES)),
-):
-    legacy_repo = BillingRepository(db)
-    db_invoice = await legacy_repo.get_invoice_by_id(invoice_id)
-    if not db_invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if db_invoice.status == InvoiceStatus.PAID:
-        raise HTTPException(status_code=422, detail="Cannot delete a paid invoice. Cancel instead.")
-    paid_res = await db.execute(select(func.sum(Payment.amount)).where(Payment.invoice_id == invoice_id))
-    if (paid_res.scalar() or 0) > 0:
-        raise HTTPException(status_code=422, detail="Cannot delete invoice with recorded payments")
-    await ActivityLogService.log_activity(
-        db, current_user.id, current_user.full_name, "DELETE", "Invoice",
-        f"Deleted invoice {invoice_id} amount {db_invoice.amount}",
-        entity_id=invoice_id,
-    )
-    await legacy_repo.delete_invoice(db_invoice)
-    return {"message": "Invoice deleted successfully"}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# LINE ITEM ENDPOINTS
-# ══════════════════════════════════════════════════════════════════════════════
-
-@router.get("/invoices/{invoice_id}/items", response_model=List[InvoiceItemInDB])
-async def get_invoice_items(
-    invoice_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    return await repo.get_items(invoice_id)
-
-
-@router.post("/invoices/{invoice_id}/items", response_model=InvoiceItemInDB, status_code=201)
-async def add_invoice_item(
-    invoice_id: UUID,
-    item_in: InvoiceItemCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise HTTPException(status_code=422, detail="Line items can only be modified on DRAFT invoices")
-    return await repo.add_item(invoice, item_in)
-
-
-@router.patch("/invoices/{invoice_id}/items/{item_id}", response_model=InvoiceItemInDB)
-async def update_invoice_item(
-    invoice_id: UUID,
-    item_id: UUID,
-    item_in: InvoiceItemUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise HTTPException(status_code=422, detail="Line items can only be modified on DRAFT invoices")
-    item = await repo.get_item(item_id, invoice_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Invoice item not found")
-    return await repo.update_item(item, item_in, invoice)
-
-
-@router.delete("/invoices/{invoice_id}/items/{item_id}", status_code=204)
-async def delete_invoice_item(
-    invoice_id: UUID,
-    item_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if invoice.status != InvoiceStatus.DRAFT:
-        raise HTTPException(status_code=422, detail="Line items can only be modified on DRAFT invoices")
-    item = await repo.get_item(item_id, invoice_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Invoice item not found")
-    await repo.delete_item(item, invoice)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PDF ENDPOINT
-# ══════════════════════════════════════════════════════════════════════════════
-
-@router.post("/invoices/{invoice_id}/pdf")
-async def generate_invoice_pdf(
-    invoice_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_WRITE_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-
-    client_result = await db.execute(select(Client).where(Client.id == invoice.client_id))
-    client = client_result.scalars().first()
-    if not client:
-        raise HTTPException(status_code=404, detail="Client not found")
-
-    try:
-        from app.services.pdf_service import generate_invoice_pdf as _gen_pdf
-        pdf_bytes = _gen_pdf(invoice=invoice, items=invoice.items, client=client)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(exc)}")
-
-    invoice_number = invoice.invoice_number or str(invoice.id)[:8].upper()
-    filename = f"invoice_{invoice_number}.pdf"
-
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# EMAIL SEND ENDPOINT
-# ══════════════════════════════════════════════════════════════════════════════
-
-@router.post("/invoices/{invoice_id}/send")
-async def send_invoice_email(
-    invoice_id: UUID,
-    send_req: InvoiceSendRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(INVOICE_SEND_ROLES)),
-):
-    repo = InvoiceRepository(db)
-    invoice = await repo.get_invoice_with_items(invoice_id)
-    if not invoice:
-        raise HTTPException(status_code=404, detail="Invoice not found")
-    if invoice.status == InvoiceStatus.CANCELLED:
-        raise HTTPException(status_code=422, detail="Cannot send a cancelled invoice")
-    if invoice.status == InvoiceStatus.PAID:
-        raise HTTPException(status_code=422, detail="Invoice is already paid")
-
-    client_result = await db.execute(select(Client).where(Client.id == invoice.client_id))
-    client = client_result.scalars().first()
-
-    # Generate PDF
-    try:
-        from app.services.pdf_service import generate_invoice_pdf as _gen_pdf
-        pdf_bytes = _gen_pdf(invoice=invoice, items=invoice.items, client=client)
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(exc)}")
-
-    # Send email
-    try:
-        from app.services.email_service import send_invoice_email as _send
-        await _send(
-            invoice=invoice,
-            pdf_bytes=pdf_bytes,
-            recipients=send_req.recipients,
-            subject=send_req.subject,
-            message=send_req.message,
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Email delivery failed: {str(exc)}. Recipients: {send_req.recipients}",
-        )
-
-    # Update invoice status and record recipients
-    await repo.mark_sent(invoice, send_req.recipients)
-    await ActivityLogService.log_activity(
-        db, current_user.id, current_user.full_name, "SEND", "Invoice",
-        f"Sent invoice {invoice.invoice_number} to {send_req.recipients}",
-        entity_id=invoice_id,
-    )
-    return {"message": "Invoice sent successfully", "recipients": send_req.recipients}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# OVERDUE MANUAL TRIGGER (ADMIN only)
-# ══════════════════════════════════════════════════════════════════════════════
-
-@router.post("/invoices/mark-overdue")
-async def trigger_overdue_detection(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN])),
-):
-    count = await mark_overdue_invoices(db)
-    return {"message": f"Marked {count} invoices as OVERDUE"}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# EXISTING PAYMENT ENDPOINTS — unchanged
+# PAYMENT ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/payments", response_model=List[PaymentInDB])
@@ -458,3 +160,174 @@ async def get_client_ledger(
     ledger.sort(key=lambda x: x["date"], reverse=True)
     total = len(ledger)
     return {"total": total, "items": ledger[skip: skip + limit]}
+
+
+# ── Financial Reports ─────────────────────────────────────────────────────────
+
+@router.get("/reports/revenue/monthly")
+async def monthly_revenue_report(
+    year: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    from datetime import datetime, date
+    target_year = year or date.today().year
+    query = select(
+        func.date_trunc('month', Invoice.created_at).label('month'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+        func.extract('year', Invoice.created_at) == target_year,
+    ).group_by('month').order_by('month')
+    result = await db.execute(query)
+    rows = result.all()
+    return {
+        "year": target_year,
+        "data": [
+            {
+                "month": row.month.strftime("%Y-%m"),
+                "revenue": float(row.revenue or 0),
+                "invoice_count": row.count,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/reports/revenue/yearly")
+async def yearly_revenue_report(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    query = select(
+        func.extract('year', Invoice.created_at).label('year'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+    ).group_by('year').order_by('year')
+    result = await db.execute(query)
+    rows = result.all()
+    return {
+        "data": [
+            {"year": int(row.year), "revenue": float(row.revenue or 0), "invoice_count": row.count}
+            for row in rows
+        ],
+    }
+
+
+@router.get("/reports/revenue/client/{client_id}")
+async def client_revenue_report(
+    client_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    inv_query = select(
+        func.sum(Invoice.total_amount).label('total_invoiced'),
+        func.count(Invoice.id).label('invoice_count'),
+    ).where(Invoice.client_id == client_id)
+    inv_row = (await db.execute(inv_query)).one()
+
+    pay_query = select(
+        func.sum(Payment.amount).label('total_paid'),
+        func.count(Payment.id).label('payment_count'),
+    ).where(Payment.client_id == client_id)
+    pay_row = (await db.execute(pay_query)).one()
+
+    overdue_query = select(func.count(Invoice.id)).where(
+        Invoice.client_id == client_id,
+        Invoice.status == InvoiceStatus.OVERDUE,
+    )
+    overdue_count = (await db.execute(overdue_query)).scalar() or 0
+
+    return {
+        "client_id": str(client_id),
+        "total_invoiced": float(inv_row.total_invoiced or 0),
+        "total_paid": float(pay_row.total_paid or 0),
+        "outstanding": float((inv_row.total_invoiced or 0) - (pay_row.total_paid or 0)),
+        "invoice_count": inv_row.invoice_count,
+        "payment_count": pay_row.payment_count,
+        "overdue_invoice_count": overdue_count,
+    }
+
+
+@router.get("/reports/invoices/summary")
+async def invoice_summary_report(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    query = select(
+        Invoice.status,
+        func.count(Invoice.id).label('count'),
+        func.sum(Invoice.total_amount).label('amount'),
+    ).group_by(Invoice.status)
+    result = await db.execute(query)
+    breakdown = {}
+    for row in result:
+        breakdown[row.status.value] = {
+            "count": row.count,
+            "amount": float(row.amount or 0),
+        }
+    return {"breakdown": breakdown}
+
+
+@router.get("/reports/payments/monthly")
+async def monthly_payments_report(
+    year: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    from datetime import date
+    target_year = year or date.today().year
+    query = select(
+        func.date_trunc('month', Payment.payment_date).label('month'),
+        func.sum(Payment.amount).label('collected'),
+        func.count(Payment.id).label('count'),
+    ).where(
+        func.extract('year', Payment.payment_date) == target_year,
+    ).group_by('month').order_by('month')
+    result = await db.execute(query)
+    rows = result.all()
+    return {
+        "year": target_year,
+        "data": [
+            {
+                "month": row.month.strftime("%Y-%m"),
+                "collected": float(row.collected or 0),
+                "payment_count": row.count,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/reports/payments/outstanding")
+async def outstanding_report(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    query = select(
+        Client.id,
+        Client.name,
+        func.sum(Invoice.total_amount).label('total_invoiced'),
+        func.coalesce(
+            select(func.sum(Payment.amount)).where(Payment.client_id == Client.id).scalar_subquery(), 0
+        ).label('total_paid'),
+    ).join(Invoice, Invoice.client_id == Client.id).where(
+        Invoice.status.not_in([InvoiceStatus.PAID, InvoiceStatus.CANCELLED]),
+    ).group_by(Client.id, Client.name).order_by(Client.name)
+    result = await db.execute(query)
+    rows = result.all()
+    return {
+        "data": [
+            {
+                "client_id": str(row.id),
+                "client_name": row.name,
+                "total_invoiced": float(row.total_invoiced or 0),
+                "total_paid": float(row.total_paid or 0),
+                "outstanding": float((row.total_invoiced or 0) - (row.total_paid or 0)),
+            }
+            for row in rows
+        ],
+    }

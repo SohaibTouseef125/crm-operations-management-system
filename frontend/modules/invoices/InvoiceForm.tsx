@@ -28,6 +28,7 @@ export default function InvoiceForm({ initialData, onSubmit, submitLabel = 'Crea
     client_id: initialData?.client_id || '',
     invoice_date: initialData?.invoice_date || today,
     due_date: initialData?.due_date || defaultDue,
+    status: initialData?.status || 'DRAFT',
     tax_percentage: initialData?.tax_percentage ?? 15,
     payment_terms: initialData?.payment_terms || DEFAULT_PAYMENT_TERMS,
     bank_details: initialData?.bank_details || DEFAULT_BANK_DETAILS,
@@ -61,7 +62,7 @@ export default function InvoiceForm({ initialData, onSubmit, submitLabel = 'Crea
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Client & Dates */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Client *</label>
           <select
@@ -85,6 +86,19 @@ export default function InvoiceForm({ initialData, onSubmit, submitLabel = 'Crea
           <input type="date" value={form.due_date}
             onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
             disabled={disabled} className={inputClass} />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select value={form.status}
+            onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+            disabled={disabled} className={inputClass}>
+            <option value="DRAFT">Draft</option>
+            <option value="SENT">Sent</option>
+            <option value="PAID">Paid</option>
+            <option value="PARTIALLY_PAID">Partially Paid</option>
+            <option value="OVERDUE">Overdue</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
         </div>
       </div>
 

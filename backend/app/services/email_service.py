@@ -1,16 +1,12 @@
-"""
-Email sending service using aiosmtplib.
-Sends invoice PDFs as email attachments.
-"""
-
 import logging
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
+import base64
 from typing import List
+
+import resend
 
 from app.core.config import settings
 from app.models.billing import Invoice
+from app.models.quotation import Quotation
 
 logger = logging.getLogger(__name__)
 
@@ -22,20 +18,13 @@ async def send_invoice_email(
     subject: str | None = None,
     message: str | None = None,
 ) -> None:
-    """
-    Send invoice PDF to a list of recipient email addresses via SMTP.
-
-    Raises:
-        RuntimeError: If SMTP credentials are not configured.
-        Exception: If email delivery fails — caller should handle and return 502.
-    """
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    if not settings.RESEND_API_KEY:
         raise RuntimeError(
-            "SMTP credentials are not configured. "
-            "Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL in .env."
+            "Resend API key is not configured. "
+            "Set RESEND_API_KEY in .env."
         )
 
-    import aiosmtplib
+    resend.api_key = settings.RESEND_API_KEY
 
     invoice_number = invoice.invoice_number or str(invoice.id)[:8].upper()
     email_subject = subject or f"Invoice #{invoice_number} from Crop2X"
@@ -46,32 +35,70 @@ async def send_invoice_email(
         f"Best regards,\nCrop2X (Private) Limited"
     )
 
-    msg = MIMEMultipart()
-    msg["From"] = settings.SMTP_FROM_EMAIL
-    msg["To"] = ", ".join(recipients)
-    msg["Subject"] = email_subject
+    pdf_b64 = base64.b64encode(pdf_bytes).decode()
 
-    msg.attach(MIMEText(email_body, "plain"))
-
-    # Attach PDF
-    pdf_attachment = MIMEApplication(pdf_bytes, _subtype="pdf")
-    pdf_attachment.add_header(
-        "Content-Disposition",
-        "attachment",
-        filename=f"invoice_{invoice_number}.pdf",
-    )
-    msg.attach(pdf_attachment)
+    params = {
+        "from": settings.FROM_EMAIL,
+        "to": recipients,
+        "subject": email_subject,
+        "text": email_body,
+        "attachments": [
+            {
+                "filename": f"invoice_{invoice_number}.pdf",
+                "content": pdf_b64,
+            }
+        ],
+    }
 
     try:
-        await aiosmtplib.send(
-            msg,
-            hostname=settings.SMTP_HOST,
-            port=settings.SMTP_PORT,
-            username=settings.SMTP_USER,
-            password=settings.SMTP_PASSWORD,
-            start_tls=True,
-        )
+        resend.Emails.send(params)
         logger.info("Invoice %s sent to %s", invoice_number, recipients)
     except Exception as exc:
         logger.error("Failed to send invoice %s to %s: %s", invoice_number, recipients, exc)
+        raise
+
+
+async def send_quotation_email(
+    quotation: Quotation,
+    pdf_bytes: bytes,
+    recipients: List[str],
+    subject: str | None = None,
+    message: str | None = None,
+) -> None:
+    if not settings.RESEND_API_KEY:
+        raise RuntimeError(
+            "Resend API key is not configured. "
+            "Set RESEND_API_KEY in .env."
+        )
+
+    resend.api_key = settings.RESEND_API_KEY
+
+    email_subject = subject or f"Quotation {quotation.quote_number} from Crop2X"
+    email_body = message or (
+        f"Dear Client,\n\n"
+        f"Please find attached Quotation {quotation.quote_number}.\n\n"
+        f"Thank you for your interest.\n\n"
+        f"Best regards,\nCrop2X (Private) Limited"
+    )
+
+    pdf_b64 = base64.b64encode(pdf_bytes).decode()
+
+    params = {
+        "from": settings.FROM_EMAIL,
+        "to": recipients,
+        "subject": email_subject,
+        "text": email_body,
+        "attachments": [
+            {
+                "filename": f"quotation_{quotation.quote_number}.pdf",
+                "content": pdf_b64,
+            }
+        ],
+    }
+
+    try:
+        resend.Emails.send(params)
+        logger.info("Quotation %s sent to %s", quotation.quote_number, recipients)
+    except Exception as exc:
+        logger.error("Failed to send quotation %s to %s: %s", quotation.quote_number, recipients, exc)
         raise

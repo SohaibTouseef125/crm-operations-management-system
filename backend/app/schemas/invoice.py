@@ -73,6 +73,8 @@ class InvoiceCreateV2(BaseModel):
     client_id: UUID
     invoice_date: Optional[date] = None           # defaults to today
     due_date: date
+    status: Optional[InvoiceStatus] = InvoiceStatus.DRAFT
+    amount: Optional[Decimal] = None              # legacy convenience; creates single line item
     tax_percentage: Optional[Decimal] = Decimal("15.00")
     payment_terms: Optional[str] = DEFAULT_PAYMENT_TERMS
     bank_details: Optional[str] = DEFAULT_BANK_DETAILS
@@ -115,7 +117,7 @@ class InvoiceUpdateV2(BaseModel):
 class InvoiceDetailResponse(BaseModel):
     id: UUID
     invoice_number: Optional[str]
-    client_id: UUID
+    client_id: Optional[UUID] = None
     # Legacy amount preserved
     amount: Decimal
     status: InvoiceStatus

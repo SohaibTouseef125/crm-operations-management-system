@@ -129,3 +129,35 @@ async def create_notification(
     await db.refresh(new_notification)
     return new_notification
 
+@router.post("/backfill", response_model=dict)
+async def backfill_notifications(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user_for_middleware)
+):
+    """Create notifications from existing tasks assigned to the current user"""
+    from app.models.task import Task
+    result = await db.execute(
+        select(Task).where(Task.assigned_to_id == current_user.id)
+    )
+    tasks = result.scalars().all()
+    count = 0
+    for task in tasks:
+        existing = await db.execute(
+            select(Notification).where(
+                Notification.user_id == current_user.id,
+                Notification.title == "New Task Assigned",
+                Notification.message == f"You have been assigned: {task.title}",
+            )
+        )
+        if not existing.scalars().first():
+            db.add(Notification(
+                user_id=current_user.id,
+                title="New Task Assigned",
+                message=f"You have been assigned: {task.title}",
+                type=NotificationType.INFO,
+                link="/tasks",
+            ))
+            count += 1
+    await db.commit()
+    return {"created": count, "message": f"Created {count} notification(s) from existing tasks"}
+

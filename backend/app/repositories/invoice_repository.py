@@ -98,8 +98,8 @@ class InvoiceRepository:
             invoice_number=invoice_number,
             invoice_date=invoice_date,
             due_date=invoice_in.due_date,
-            status=InvoiceStatus.DRAFT,
-            tax_percentage=invoice_in.tax_percentage or Decimal("15.00"),
+            status=invoice_in.status or InvoiceStatus.DRAFT,
+            tax_percentage=invoice_in.tax_percentage if invoice_in.tax_percentage is not None else Decimal("15.00"),
             payment_terms=invoice_in.payment_terms or DEFAULT_PAYMENT_TERMS,
             bank_details=invoice_in.bank_details or DEFAULT_BANK_DETAILS,
             notes=invoice_in.notes,
@@ -123,6 +123,16 @@ class InvoiceRepository:
                     unit_price=item_data.unit_price,
                 )
                 self.db.add(item)
+        elif invoice_in.amount is not None:
+            # Legacy support: create single line item from amount
+            item = InvoiceItem(
+                invoice_id=db_invoice.id,
+                serial_number=1,
+                item_name="Service",
+                unit_price=invoice_in.amount,
+            )
+            self.db.add(item)
+        if invoice_in.items or invoice_in.amount is not None:
             await self.db.flush()
 
         # Recalculate totals
@@ -232,7 +242,7 @@ class InvoiceRepository:
         )
         subtotal = result.scalar() or Decimal("0")
 
-        tax_pct = invoice.tax_percentage or Decimal("15")
+        tax_pct = invoice.tax_percentage if invoice.tax_percentage is not None else Decimal("15")
         tax_amount = (subtotal * tax_pct / Decimal("100")).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )

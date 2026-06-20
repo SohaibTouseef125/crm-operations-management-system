@@ -60,6 +60,17 @@ export default function NotificationFeed() {
     }
   };
 
+  const backfillNotifications = async () => {
+    try {
+      const res = await api.post('/notifications/backfill');
+      toast.success(res.data.message);
+      const response = await api.get('/notifications', { params: { limit: 50 } });
+      setNotifications(response.data);
+    } catch (err) {
+      toast.error(formatApiError(err, 'Unable to backfill notifications'));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -67,13 +78,22 @@ export default function NotificationFeed() {
           <h2 className="text-xl font-bold text-gray-900">Activity Notifications</h2>
           <p className="text-sm text-gray-500">Review your latest system alerts and keep your dashboard up to date.</p>
         </div>
-        <button
-          type="button"
-          onClick={markAllRead}
-          className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          Mark all read
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={backfillNotifications}
+            className="inline-flex items-center justify-center rounded-md border border-blue-300 bg-white px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+          >
+            Load from tasks
+          </button>
+          <button
+            type="button"
+            onClick={markAllRead}
+            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Mark all read
+          </button>
+        </div>
       </div>
 
       {isLoading ? (

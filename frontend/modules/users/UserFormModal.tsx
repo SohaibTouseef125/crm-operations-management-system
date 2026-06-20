@@ -11,7 +11,7 @@ import { formatApiError } from '@/lib/formatApiError';
 const userSchema = z.object({
   email: z.string().email('Invalid email address'),
   full_name: z.string().min(1, 'Full name is required'),
-  role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE', 'BUSINESS', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS']),
+  role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS']),
   password: z.string().min(6, 'Password must be at least 6 characters').optional().nullable(),
   is_active: z.boolean().optional(),
 });
@@ -130,6 +130,7 @@ export default function UserFormModal({
               <option value="MANAGER">Manager</option>
               <option value="ADMIN">Admin</option>
               <option value="BUSINESS">Business</option>
+              <option value="BDM">BDM</option>
               <option value="AGRONOMY">Agronomy</option>
               <option value="HARDWARE">Hardware</option>
               <option value="ACCOUNTS">Accounts</option>

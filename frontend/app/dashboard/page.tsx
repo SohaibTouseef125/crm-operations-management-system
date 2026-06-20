@@ -22,13 +22,13 @@ function StatCard({ title, value, icon: Icon, color, bg }: {
   color: string; bg: string;
 }) {
   return (
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-      <div className={`${bg} p-3 rounded-lg flex-shrink-0`}>
-        <Icon className={`w-5 h-5 ${color}`} />
+    <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-2 sm:gap-4 min-w-0">
+      <div className={`${bg} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
+        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${color}`} />
       </div>
-      <div>
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-2xl font-black text-gray-900">{value}</p>
+      <div className="min-w-0">
+        <p className="text-[10px] sm:text-sm text-gray-500 font-medium">{title}</p>
+        <p className="text-sm sm:text-2xl font-black text-gray-900 break-words">{value}</p>
       </div>
     </div>
   );
@@ -106,12 +106,36 @@ function HardwareDashboard({ data }: { data: any }) {
 }
 
 function AccountsDashboard({ data }: { data: any }) {
+  const invoicesByStatus = Object.entries(data?.invoices_by_status ?? {}).map(([name, value]) => ({
+    name: name.replace(/_/g, ' '), value: Number(value),
+  }));
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <StatCard title="Total Revenue" value={`$${Number(data?.total_revenue ?? 0).toLocaleString()}`} icon={DollarSign} color="text-green-600" bg="bg-green-100" />
-      <StatCard title="Outstanding" value={`$${Number(data?.outstanding_balance ?? 0).toLocaleString()}`} icon={AlertCircle} color="text-orange-600" bg="bg-orange-100" />
-      <StatCard title="Overdue Invoices" value={data?.overdue_invoices_count ?? 0} icon={ShieldAlert} color="text-red-600" bg="bg-red-100" />
-      <StatCard title="Due Next 30 Days" value={data?.due_next_30_days ?? 0} icon={CheckSquare} color="text-blue-600" bg="bg-blue-100" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <StatCard title="Total Revenue" value={`Rs. ${Number(data?.total_revenue ?? 0).toLocaleString()}`} icon={DollarSign} color="text-green-600" bg="bg-green-100" />
+        <StatCard title="Monthly Revenue" value={`Rs. ${Number(data?.monthly_revenue ?? 0).toLocaleString()}`} icon={TrendingUp} color="text-blue-600" bg="bg-blue-100" />
+        <StatCard title="Outstanding" value={`Rs. ${Number(data?.outstanding_balance ?? 0).toLocaleString()}`} icon={AlertCircle} color="text-orange-600" bg="bg-orange-100" />
+        <StatCard title="Overdue Invoices" value={data?.overdue_invoices_count ?? 0} icon={ShieldAlert} color="text-red-600" bg="bg-red-100" />
+        <StatCard title="Due Next 30 Days" value={data?.due_next_30_days ?? 0} icon={CheckSquare} color="text-blue-600" bg="bg-blue-100" />
+        <StatCard title="Total Clients" value={data?.total_clients ?? 0} icon={Users} color="text-purple-600" bg="bg-purple-100" />
+        <StatCard title="Collection Rate" value={`${data?.collection_rate ?? 0}%`} icon={BarChart2} color="text-indigo-600" bg="bg-indigo-100" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {invoicesByStatus.length > 0 && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 className="font-bold text-gray-900 mb-4">Invoice Status Breakdown</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={invoicesByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label>
+                  {invoicesByStatus.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -202,7 +226,8 @@ export default function DashboardPage() {
 
   const roleTitle: Record<string, string> = {
     ADMIN: 'Admin Overview', MANAGER: 'Operations Overview',
-    BUSINESS: 'Business Dashboard', AGRONOMY: 'Agronomy Dashboard',
+    BUSINESS: 'Business Dashboard', BDM: 'BDM Dashboard',
+    AGRONOMY: 'Agronomy Dashboard',
     HARDWARE: 'Hardware Dashboard', ACCOUNTS: 'Accounts Dashboard',
     EMPLOYEE: 'My Dashboard',
   };
@@ -225,7 +250,7 @@ export default function DashboardPage() {
             <>
               {/* Role-specific dashboard */}
               {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && <AdminDashboard data={stats} />}
-              {user?.role === 'BUSINESS' && <BusinessDashboard data={stats} />}
+              {(user?.role === 'BUSINESS' || user?.role === 'BDM') && <BusinessDashboard data={stats} />}
               {user?.role === 'AGRONOMY' && <AgronomyDashboard data={stats} />}
               {user?.role === 'HARDWARE' && <HardwareDashboard data={stats} />}
               {user?.role === 'ACCOUNTS' && <AccountsDashboard data={stats} />}

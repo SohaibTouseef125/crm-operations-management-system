@@ -13,6 +13,7 @@ from app.schemas.ops import TaskCreate, TaskUpdate, TaskInDB
 from app.models.user import User, UserRole
 from app.routers.deps import get_current_user, check_role
 from app.services.activity_log_service import ActivityLogService
+from app.core.rbac import TASK_READ_ROLES, TASK_CREATE_ROLES
 
 router = APIRouter()
 
@@ -39,16 +40,15 @@ async def read_tasks(
     repo = TaskRepository(db)
     if current_user.role in [UserRole.ADMIN, UserRole.MANAGER]:
         return await repo.get_all()
-    return await repo.get_by_user(current_user.id)
+    if current_user.role in TASK_READ_ROLES:
+        return await repo.get_by_user(current_user.id)
+    raise HTTPException(status_code=403, detail="Not enough permissions")
 
 @router.post("/", response_model=TaskInDB)
 async def create_task(
     task_in: TaskCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([
-        UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS,
-        UserRole.ACCOUNTS, UserRole.HARDWARE, UserRole.AGRONOMY,
-    ]))
+    current_user: User = Depends(check_role(TASK_CREATE_ROLES))
 ):
     repo = TaskRepository(db)
     task = await repo.create(task_in)
@@ -98,8 +98,9 @@ async def update_task(
 
     if task_in.status and task_in.status != db_task.status:
         allowed = {
-            TaskStatus.PENDING: [TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED],
-            TaskStatus.IN_PROGRESS: [TaskStatus.COMPLETED],
+            TaskStatus.PENDING: [TaskStatus.IN_PROGRESS, TaskStatus.OVERDUE, TaskStatus.COMPLETED],
+            TaskStatus.IN_PROGRESS: [TaskStatus.COMPLETED, TaskStatus.OVERDUE],
+            TaskStatus.OVERDUE: [TaskStatus.PENDING, TaskStatus.COMPLETED],
             TaskStatus.COMPLETED: [],
         }
         if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:

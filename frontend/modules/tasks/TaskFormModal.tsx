@@ -11,9 +11,13 @@ import { formatApiError } from '@/lib/formatApiError';
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required'),
   description: z.string().optional().nullable(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED']),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE']),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
   assigned_to_id: z.string().min(1, 'Assignee is required'),
+  client_id: z.string().optional().nullable(),
+  quotation_id: z.string().optional().nullable(),
+  invoice_id: z.string().optional().nullable(),
+  payment_followup_id: z.string().optional().nullable(),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -36,10 +40,18 @@ export default function TaskFormModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<{ id: string; full_name: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [quotations, setQuotations] = useState<{ id: string; quote_number?: string }[]>([]);
+  const [invoices, setInvoices] = useState<{ id: string; title?: string; invoice_number?: string }[]>([]);
+  const [payments, setPayments] = useState<{ id: string; amount: number; invoice_id: string; payment_date: string }[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       fetchUsers();
+      fetchClients();
+      fetchQuotations();
+      fetchInvoices();
+      fetchPayments();
     }
   }, [isOpen]);
 
@@ -49,6 +61,42 @@ export default function TaskFormModal({
       setUsers(res.data);
     } catch (err) {
       toast.error(formatApiError(err, 'Failed to load users'));
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const res = await api.get('/clients');
+      setClients(res.data);
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to load clients'));
+    }
+  };
+
+  const fetchQuotations = async () => {
+    try {
+      const res = await api.get('/quotations');
+      setQuotations(res.data);
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to load quotations'));
+    }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      const res = await api.get('/invoices');
+      setInvoices(Array.isArray(res.data) ? res.data : (res.data?.items ?? []));
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to load invoices'));
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const res = await api.get('/billing/payments');
+      setPayments(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to load payments'));
     }
   };
 
@@ -130,6 +178,7 @@ export default function TaskFormModal({
               <option value="PENDING">Pending</option>
               <option value="IN_PROGRESS">In Progress</option>
               <option value="COMPLETED">Completed</option>
+              <option value="OVERDUE">Overdue</option>
             </select>
           </div>
 
@@ -161,6 +210,60 @@ export default function TaskFormModal({
             {errors.assigned_to_id && (
               <p className="mt-1 text-xs text-red-500">{errors.assigned_to_id.message}</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Client</label>
+              <select
+                {...register('client_id')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">None</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Quotation</label>
+              <select
+                {...register('quotation_id')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">None</option>
+                {quotations.map((q) => (
+                  <option key={q.id} value={q.id}>{q.quote_number || q.id}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Invoice</label>
+              <select
+                {...register('invoice_id')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">None</option>
+                {invoices.map((inv) => (
+                  <option key={inv.id} value={inv.id}>{inv.invoice_number || inv.title || inv.id}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Payment Follow-up</label>
+              <select
+                {...register('payment_followup_id')}
+                className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="">None</option>
+                {payments.map((p) => (
+                  <option key={p.id} value={p.id}>{`Rs. ${Number(p.amount).toLocaleString()} — ${new Date(p.payment_date).toLocaleDateString()}`}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">

@@ -16,8 +16,8 @@ def test_business_can_write_clients():
     assert UserRole.BUSINESS in CLIENT_WRITE_ROLES
 
 
-def test_business_cannot_read_billing():
-    assert UserRole.BUSINESS not in BILLING_READ_ROLES
+def test_business_can_read_billing():
+    assert UserRole.BUSINESS in BILLING_READ_ROLES
 
 
 def test_agronomy_cannot_write_devices():

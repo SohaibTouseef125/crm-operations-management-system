@@ -23,7 +23,7 @@ class IssueUpdate(BaseModel):
 
 class IssueInDB(IssueBase):
     id: UUID
-    client_id: UUID
+    client_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
 

@@ -6,7 +6,6 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import InvoiceForm from '@/modules/invoices/InvoiceForm';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
-import { formatApiError } from '@/lib/formatApiError';
 import { InvoiceFormData } from '@/types/invoice';
 
 export default function NewInvoicePage() {
@@ -30,11 +29,11 @@ export default function NewInvoicePage() {
     };
 
     try {
-      const res = await api.post('/billing/invoices', payload);
+      const res = await api.post('/invoices', payload);
       toast.success(`Invoice ${res.data.invoice_number} created`);
-      router.push(`/billing/invoices/${res.data.id}`);
+      router.push(`/invoices/${res.data.id}`);
     } catch (err) {
-      throw err; // InvoiceForm handles the toast
+      throw err;
     }
   };
 

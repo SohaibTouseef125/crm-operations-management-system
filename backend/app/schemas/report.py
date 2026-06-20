@@ -29,6 +29,7 @@ class FieldReportUpdate(BaseModel):
 
 class FieldReportInDB(FieldReportBase):
     id: UUID
+    client_id: Optional[UUID] = None
     created_by_id: UUID
     created_at: datetime
     updated_at: datetime
