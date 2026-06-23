@@ -92,7 +92,7 @@ export default function ClientFormModal({
         await api.patch(`/clients/${clientId}`, data);
         toast.success('Client updated successfully');
       } else {
-        await api.post('/clients', data);
+        await api.post('/clients/', data);
         toast.success('Client created successfully');
       }
       onSuccess();

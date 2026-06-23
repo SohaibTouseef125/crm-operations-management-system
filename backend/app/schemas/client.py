@@ -33,7 +33,7 @@ class LeadBase(BaseModel):
     location: str
     address: Optional[str] = None
     stage: LeadStage = LeadStage.DISCOVERY
-    assigned_to_id: UUID
+    assigned_to_id: Optional[UUID] = None
     notes: Optional[str] = None
     services_interested: Optional[List[str]] = None
     other_services: Optional[str] = None

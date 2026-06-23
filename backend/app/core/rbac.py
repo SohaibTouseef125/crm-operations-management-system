@@ -48,6 +48,7 @@ INVOICE_READ_ROLES = [
     UserRole.ACCOUNTS,
     UserRole.BDM,
     UserRole.BUSINESS,
+    UserRole.AGRONOMY,
 ]
 
 INVOICE_WRITE_ROLES = [

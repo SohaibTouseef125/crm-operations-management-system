@@ -73,7 +73,7 @@ export default function TaskBoard() {
 
   const fetchTasks = async () => {
     try {
-      const res = await api.get('/tasks');
+      const res = await api.get('/tasks/');
       setTasks(res.data);
     } catch (error) {
       toast.error(formatApiError(error, 'Failed to load tasks'));

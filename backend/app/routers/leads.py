@@ -49,6 +49,9 @@ async def create_lead(
     current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.BDM, UserRole.BUSINESS]))
 ):
     repo = LeadRepository(db)
+    # Auto-assign to current user if not specified (Business hides the field)
+    if lead_in.assigned_to_id is None:
+        lead_in.assigned_to_id = current_user.id
     lead = await repo.create(lead_in)
 
     await ActivityLogService.log_activity(

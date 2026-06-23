@@ -118,7 +118,7 @@ export default function TaskFormModal({
         await api.patch(`/tasks/${taskId}`, data);
         toast.success('Task updated successfully');
       } else {
-        await api.post('/tasks', data);
+        await api.post('/tasks/', data);
         toast.success('Task created successfully');
       }
       onSuccess();

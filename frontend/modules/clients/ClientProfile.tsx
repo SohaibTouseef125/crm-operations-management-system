@@ -145,7 +145,9 @@ export default function ClientProfile({ id }: { id: string }) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      await api.post(`/clients/${id}/documents/upload`, formData);
+      await api.post(`/clients/${id}/documents/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       toast.success('Document uploaded');
       fetchDocuments();
     } catch (error) {
@@ -178,14 +180,28 @@ export default function ClientProfile({ id }: { id: string }) {
     const fetchClientData = async () => {
       try {
         const clientRes = await api.get(`/clients/${id}`);
-        const invoicesRes = await api.get('/invoices', { params: { client_id: id } });
-        const issuesRes = await api.get(`/clients/${id}/issues`);
-        const reportsRes = await api.get('/reports', { params: { client_id: id } });
-
         setClient(clientRes.data);
-        setInvoices(Array.isArray(invoicesRes.data) ? invoicesRes.data : (invoicesRes.data?.items ?? []));
-        setIssues(issuesRes.data);
-        setReports(reportsRes.data);
+
+        try {
+          const invoicesRes = await api.get('/invoices', { params: { client_id: id } });
+          setInvoices(Array.isArray(invoicesRes.data) ? invoicesRes.data : (invoicesRes.data?.items ?? []));
+        } catch {
+          setInvoices([]);
+        }
+
+        try {
+          const issuesRes = await api.get(`/clients/${id}/issues`);
+          setIssues(issuesRes.data);
+        } catch {
+          setIssues([]);
+        }
+
+        try {
+          const reportsRes = await api.get('/reports', { params: { client_id: id } });
+          setReports(reportsRes.data);
+        } catch {
+          setReports([]);
+        }
 
         try {
           const quotationsRes = await api.get('/quotations', { params: { client_id: id } });
@@ -202,7 +218,7 @@ export default function ClientProfile({ id }: { id: string }) {
         }
 
         try {
-          const docsRes = await api.get(`/clients/${id}/documents/${id}`);
+          const docsRes = await api.get(`/clients/${id}/documents/`);
           setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
         } catch {
           setDocuments([]);

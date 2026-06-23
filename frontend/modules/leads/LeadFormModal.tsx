@@ -95,7 +95,7 @@ export default function LeadFormModal({
         await api.patch(`/leads/${leadId}`, payload);
         toast.success('Lead updated successfully');
       } else {
-        await api.post('/leads', payload);
+        await api.post('/leads/', payload);
         toast.success('Lead created successfully');
       }
       onSuccess();
