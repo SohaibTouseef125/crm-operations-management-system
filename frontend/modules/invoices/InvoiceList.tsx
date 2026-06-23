@@ -3,13 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, Filter, ChevronLeft, ChevronRight, Edit3, Trash2, Send, FileText } from 'lucide-react';
+import { Search, Plus, Filter, ChevronLeft, ChevronRight, Edit3, Trash2 } from 'lucide-react';
 import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import InvoiceStatusBadge from './InvoiceStatusBadge';
-import EmailModal from './EmailModal';
 import { InvoiceDetail, InvoiceStatus, PaginatedInvoices } from '@/types/invoice';
 
 const STATUSES: (InvoiceStatus | 'ALL')[] = ['ALL', 'DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED'];
@@ -27,28 +26,7 @@ export default function InvoiceList() {
 
   const canCreate = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
   const canEdit = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
-  const canSend = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
   const canDelete = user && ['ADMIN', 'MANAGER'].includes(user.role);
-
-  const [emailTarget, setEmailTarget] = useState<{ id: string; number: string } | null>(null);
-  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
-
-  const handleDownloadPDF = async (id: string, invoiceNumber: string) => {
-    setPdfLoadingId(id);
-    try {
-      const res = await api.post(`/invoices/${id}/pdf`, {}, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `invoice_${invoiceNumber}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error(formatApiError(err, 'Failed to generate PDF'));
-    } finally {
-      setPdfLoadingId(null);
-    }
-  };
 
   const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
@@ -164,19 +142,6 @@ export default function InvoiceList() {
                           className="text-xs font-bold text-blue-600 hover:text-blue-800">
                           View
                         </Link>
-                        <button onClick={() => handleDownloadPDF(inv.id, inv.invoice_number || `INV-${inv.id.slice(0, 8).toUpperCase()}`)}
-                          className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
-                          title="Generate Invoice PDF"
-                          disabled={pdfLoadingId === inv.id}>
-                          <FileText className={`w-4 h-4 ${pdfLoadingId === inv.id ? 'animate-pulse' : ''}`} />
-                        </button>
-                        {canSend && inv.status !== 'CANCELLED' && inv.status !== 'PAID' && (
-                          <button onClick={() => setEmailTarget({ id: inv.id, number: inv.invoice_number || `INV-${inv.id.slice(0, 8).toUpperCase()}` })}
-                            className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors"
-                            title="Send Invoice Email">
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
                         {canEdit && (
                           <Link href={`/invoices/${inv.id}/edit`}
                             className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded transition-colors"
@@ -219,15 +184,6 @@ export default function InvoiceList() {
         )}
       </div>
 
-      {emailTarget && (
-        <EmailModal
-          invoiceId={emailTarget.id}
-          invoiceNumber={emailTarget.number}
-          isOpen={true}
-          onClose={() => setEmailTarget(null)}
-          onSuccess={fetchInvoices}
-        />
-      )}
     </div>
   );
 }

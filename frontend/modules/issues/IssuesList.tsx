@@ -275,9 +275,9 @@ export default function IssuesList() {
                     </Link>
                     {canDelete && (
                       <button onClick={() => deleteIssue(issue.id)}
-                        className="p-2.5 text-red-700 hover:text-red-900 hover:bg-red-200 bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                         title="Delete Issue">
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
