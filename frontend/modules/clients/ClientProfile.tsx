@@ -626,7 +626,7 @@ export default function ClientProfile({ id }: { id: string }) {
                           <td className="py-2 pr-4 text-gray-600">{new Date(doc.created_at).toLocaleDateString()}</td>
                           <td className="py-2 flex items-center gap-2">
                             <a
-                              href={`/uploads/documents/${doc.file_path.split('\\').pop()?.split('/').pop()}`}
+                              href={`${API_BASE}/uploads/documents/${doc.file_path.split('\\').pop()?.split('/').pop()}`}
                               target="_blank"
                               rel="noreferrer"
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"

@@ -6,7 +6,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import FarmFormModal from '@/modules/farmers/FarmFormModal';
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, Trash2 } from 'lucide-react';
 
 interface Farm {
   id: string;
@@ -49,6 +49,28 @@ export default function FarmerProfile({ id }: { id: string }) {
     }
   };
 
+  const deleteFarm = async (farmId: string) => {
+    if (!confirm('Are you sure you want to delete this farm?')) return;
+    try {
+      await api.delete(`/farms/${farmId}`);
+      setFarms(prev => prev.filter(f => f.id !== farmId));
+      toast.success('Farm deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete farm'));
+    }
+  };
+
+  const deleteFarmer = async () => {
+    if (!confirm('Are you sure you want to delete this farmer? This cannot be undone.')) return;
+    try {
+      await api.delete(`/farmers/${id}`);
+      toast.success('Farmer deleted');
+      window.location.href = '/farmers';
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete farmer'));
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,7 +96,16 @@ export default function FarmerProfile({ id }: { id: string }) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
       <div className="lg:col-span-1 space-y-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 border-t-4 border-blue-600">
-          <h2 className="text-2xl font-bold text-gray-900">{farmer.name}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">{farmer.name}</h2>
+            {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
+              <button onClick={deleteFarmer}
+                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                title="Delete Farmer">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           {farmer.assigned_agent_name && (
             <p className="text-gray-700 font-medium text-sm mt-1">Agent: {farmer.assigned_agent_name}</p>
           )}
@@ -150,7 +181,14 @@ export default function FarmerProfile({ id }: { id: string }) {
           {farms.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {farms.map((farm) => (
-                <div key={farm.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+                <div key={farm.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 relative">
+                  {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                    <button onClick={() => deleteFarm(farm.id)}
+                      className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Delete Farm">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <p className="font-bold text-gray-900">{farm.farm_name}</p>
                   <p className="text-sm text-gray-600 mt-1">{farm.total_acreage} Acres</p>
                   {farm.location_address && (

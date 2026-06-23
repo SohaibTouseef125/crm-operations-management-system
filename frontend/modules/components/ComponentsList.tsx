@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { CircuitBoard, Plus, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { CircuitBoard, Plus, ChevronDown, ChevronUp, Package, Trash2 } from 'lucide-react';
 
 interface ProcurementRecord {
   id: string;
@@ -240,6 +240,7 @@ export default function ComponentsList() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const canManage = user && ['ADMIN', 'MANAGER', 'HARDWARE'].includes(user.role);
+  const canDelete = user && ['ADMIN', 'MANAGER'].includes(user.role);
 
   const fetchComponents = async () => {
     try {
@@ -249,6 +250,17 @@ export default function ComponentsList() {
       toast.error(formatApiError(err, 'Failed to load components'));
     }
     finally { setIsLoading(false); }
+  };
+
+  const deleteComponent = async (componentId: string) => {
+    if (!confirm('Are you sure you want to delete this component?')) return;
+    try {
+      await api.delete(`/components/${componentId}`);
+      setComponents(prev => prev.filter(c => c.id !== componentId));
+      toast.success('Component deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete component'));
+    }
   };
 
   useEffect(() => { fetchComponents(); }, []);
@@ -298,6 +310,15 @@ export default function ComponentsList() {
                     className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
                   >
                     + Procure
+                  </button>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteComponent(comp.id); }}
+                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete Component"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 )}
                 {expandedId === comp.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}

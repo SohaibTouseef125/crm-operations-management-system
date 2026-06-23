@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { AlertCircle, Plus, ExternalLink } from 'lucide-react';
+import { AlertCircle, Plus, ExternalLink, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 interface Issue {
@@ -144,6 +144,7 @@ export default function IssuesList() {
 
   const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role);
   const canUpdate = user && ['ADMIN', 'MANAGER'].includes(user.role);
+  const canDelete = user && ['ADMIN'].includes(user.role);
 
   const fetchIssues = async () => {
     try {
@@ -161,6 +162,17 @@ export default function IssuesList() {
       toast.error(formatApiError(err, 'Failed to load issues'));
     }
     finally { setIsLoading(false); }
+  };
+
+  const deleteIssue = async (issueId: string) => {
+    if (!confirm('Are you sure you want to delete this issue?')) return;
+    try {
+      await api.delete(`/issues/${issueId}`);
+      setIssues(prev => prev.filter(i => i.id !== issueId));
+      toast.success('Issue deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete issue'));
+    }
   };
 
   const updateIssueStatus = async (issueId: string, status: string) => {
@@ -208,7 +220,7 @@ export default function IssuesList() {
           <thead className="bg-gray-50">
             <tr>
               {['Issue', 'Client', 'Priority', 'Status', 'Date', ''].map((h, i) => (
-                <th key={h} className={`px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider ${i >= 4 ? 'hidden sm:table-cell' : ''}`}>{h}</th>
+                <th key={h} className={`px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider ${i === 4 ? 'hidden sm:table-cell' : ''} ${i === 5 ? 'text-right' : ''}`}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -255,11 +267,20 @@ export default function IssuesList() {
                 <td className="px-5 py-4 text-xs text-gray-500 hidden sm:table-cell">
                   {new Date(issue.created_at).toLocaleDateString()}
                 </td>
-                <td className="px-5 py-4 text-right hidden sm:table-cell">
-                  <Link href={`/clients/${issue.client_id}`}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-bold">
-                    View Client
-                  </Link>
+                <td className="px-5 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Link href={`/clients/${issue.client_id}`}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-bold">
+                      View Client
+                    </Link>
+                    {canDelete && (
+                      <button onClick={() => deleteIssue(issue.id)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete Issue">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

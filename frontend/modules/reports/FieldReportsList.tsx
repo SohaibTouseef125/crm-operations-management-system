@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { FileText, Plus, Calendar, Tag } from 'lucide-react';
+import { FileText, Plus, Calendar, Tag, Trash2 } from 'lucide-react';
 
 interface FieldReport {
   id: string;
@@ -167,6 +167,7 @@ export default function FieldReportsList() {
   const [typeFilter, setTypeFilter] = useState('ALL');
 
   const canCreate = user && ['ADMIN', 'MANAGER', 'AGRONOMY'].includes(user.role);
+  const canDelete = user && ['ADMIN', 'MANAGER'].includes(user.role);
 
   const fetchReports = async () => {
     try {
@@ -176,6 +177,17 @@ export default function FieldReportsList() {
       toast.error(formatApiError(err, 'Failed to load reports'));
     }
     finally { setIsLoading(false); }
+  };
+
+  const deleteReport = async (reportId: string) => {
+    if (!confirm('Are you sure you want to delete this field report?')) return;
+    try {
+      await api.delete(`/reports/${reportId}`);
+      setReports(prev => prev.filter(r => r.id !== reportId));
+      toast.success('Field report deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete field report'));
+    }
   };
 
   useEffect(() => {
@@ -242,14 +254,23 @@ export default function FieldReportsList() {
                   )}
                 </div>
               </div>
-              <div className="text-right text-xs text-gray-500 flex-shrink-0 ml-4">
-                <div className="flex items-center gap-1 justify-end">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(report.report_date).toLocaleDateString()}
+              <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                <div className="text-right text-xs text-gray-500">
+                  <div className="flex items-center gap-1 justify-end">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(report.report_date).toLocaleDateString()}
+                  </div>
+                  <div className="text-gray-400 mt-1">
+                    Added {new Date(report.created_at).toLocaleDateString()}
+                  </div>
                 </div>
-                <div className="text-gray-400 mt-1">
-                  Added {new Date(report.created_at).toLocaleDateString()}
-                </div>
+                {canDelete && (
+                  <button onClick={() => deleteReport(report.id)}
+                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    title="Delete Report">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

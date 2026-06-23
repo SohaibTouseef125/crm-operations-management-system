@@ -21,6 +21,7 @@ interface ServiceType {
 export default function ServicesList() {
   const { user } = useAuthStore();
   const canWrite = user && ['ADMIN', 'BDM'].includes(user.role);
+  const canDelete = user && ['ADMIN'].includes(user.role);
   const [items, setItems] = useState<ServiceType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -139,7 +140,7 @@ export default function ServicesList() {
                   <button onClick={() => { setEditItem(item); setForm({ name: item.name, category: item.category, description: item.description || '', price: item.price, tax_percentage: item.tax_percentage }); setShowForm(true); }}
                     className="p-1 hover:bg-gray-100 rounded"><Pencil size={16} /></button>
                 )}
-                {canWrite && (
+                {canDelete && (
                   <button onClick={() => handleDelete(item.id)} className="p-1 hover:bg-red-100 rounded text-red-500"><Trash2 size={16} /></button>
                 )}
               </div>

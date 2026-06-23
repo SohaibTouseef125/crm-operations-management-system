@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { Calendar, CheckCircle, XCircle, Clock, MapPin, Plus } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, Clock, MapPin, Plus, Trash2 } from 'lucide-react';
 
 interface CalendarEvent {
   id: string;
@@ -89,6 +89,15 @@ export default function CalendarView() {
       toast.success('Visit cancelled');
       fetchEvents();
     } catch { toast.error('Failed to cancel'); }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return;
+    try {
+      await api.delete(`/calendar/${id}`);
+      toast.success('Event deleted');
+      fetchEvents();
+    } catch { toast.error('Failed to delete event'); }
   };
 
   const filtered = filterStatus === 'ALL' ? events : events.filter(e => e.status === filterStatus);
@@ -207,6 +216,13 @@ export default function CalendarView() {
                     <button onClick={() => handleCancel(event.id)}
                       className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-xs font-medium">
                       <XCircle className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                  )}
+                  {canManage && (
+                    <button onClick={() => handleDelete(event.id)}
+                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Delete Event">
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>

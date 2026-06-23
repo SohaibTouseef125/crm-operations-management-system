@@ -6,7 +6,7 @@ import LeadFormModal, { type LeadFormData } from './LeadFormModal';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { FileText, Plus, UserCheck, Calendar, Trash2, XCircle } from 'lucide-react';
+import { FileText, Plus, UserCheck, Calendar, Trash2, XCircle, Edit3 } from 'lucide-react';
 
 // ── Spec-defined stages ──────────────────────────────────
 const STAGES = [
@@ -198,6 +198,13 @@ export default function LeadsKanban() {
                         <p className="text-xs text-gray-400 mt-0.5">{lead.location}</p>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
+                        {canManage && (
+                          <button onClick={() => { setSelectedLead(lead); setShowForm(true); }}
+                            className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Edit Lead">
+                            <Edit3 size={12} />
+                          </button>
+                        )}
                         {canManage && stage.key !== 'won' && TRANSITIONS[stage.key]?.map(nextStage => (
                           <button key={nextStage} onClick={() => handleStageChange(lead.id, nextStage)}
                             className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors whitespace-nowrap">

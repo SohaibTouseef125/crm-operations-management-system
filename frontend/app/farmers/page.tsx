@@ -9,7 +9,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import FarmerFormModal from '@/modules/farmers/FarmerFormModal';
-import { Eye, Plus } from 'lucide-react';
+import { Eye, Plus, Trash2 } from 'lucide-react';
 
 interface Farmer {
   id: string;
@@ -39,6 +39,17 @@ export default function FarmersPage() {
       toast.error(formatApiError(error, 'Failed to load farmers'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const deleteFarmer = async (farmerId: string) => {
+    if (!confirm('Are you sure you want to delete this farmer?')) return;
+    try {
+      await api.delete(`/farmers/${farmerId}`);
+      setFarmers(prev => prev.filter(f => f.id !== farmerId));
+      toast.success('Farmer deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete farmer'));
     }
   };
 
@@ -91,12 +102,21 @@ export default function FarmersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Link
-                        href={`/farmers/${farmer.id}`}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5 mr-1" /> View
-                      </Link>
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={`/farmers/${farmer.id}`}
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1" /> View
+                        </Link>
+                        {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                          <button onClick={() => deleteFarmer(farmer.id)}
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete Farmer">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

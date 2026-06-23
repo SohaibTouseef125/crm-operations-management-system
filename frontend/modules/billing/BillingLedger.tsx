@@ -296,6 +296,7 @@ export default function BillingLedger() {
 
   const canManageBilling = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
   const canDeleteInvoice = user && ['ADMIN', 'MANAGER'].includes(user.role);
+  const canDeleteUpload = user && ['ADMIN'].includes(user.role);
 
   const fetchInvoices = async () => {
     try {
@@ -320,12 +321,21 @@ export default function BillingLedger() {
     api.get('/clients').then(res => setClients(res.data)).catch(() => {});
   }, []);
 
-  const handleDownload = (invoice: Invoice) => {
+  const handleDownload = async (invoice: Invoice) => {
     const url = fileUrl(invoice.file_path);
-    if (url) {
-      window.open(url, '_blank');
-    } else {
+    if (!url) {
       toast.warning('No file attached to this invoice.');
+      return;
+    }
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      if (!res.ok) {
+        toast.warning('File not found on server.');
+        return;
+      }
+      window.open(url, '_blank');
+    } catch {
+      toast.warning('Unable to access file.');
     }
   };
 
@@ -366,6 +376,20 @@ export default function BillingLedger() {
       toast.success('Invoice file uploaded successfully');
     } catch (err) {
       toast.error(formatApiError(err, 'Failed to upload invoice file'));
+    }
+  };
+
+  const handleDeleteFile = async (invoice: Invoice) => {
+    if (!confirm('Delete this uploaded file?')) return;
+    try {
+      const filename = invoice.file_path?.split('\\').pop()?.split('/').pop();
+      if (!filename) return;
+      await api.delete(`/uploads/invoices/${filename}`);
+      await api.patch(`/invoices/${invoice.id}`, { file_path: null });
+      fetchInvoices();
+      toast.success('File deleted');
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to delete file'));
     }
   };
 
@@ -463,6 +487,15 @@ export default function BillingLedger() {
                       >
                         <Download className="w-3.5 h-3.5" /> Download
                       </button>
+                      )}
+                      {canDeleteUpload && invoice.file_path && (
+                        <button
+                          onClick={() => handleDeleteFile(invoice)}
+                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete File"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       )}
 
                       {canManageBilling && (

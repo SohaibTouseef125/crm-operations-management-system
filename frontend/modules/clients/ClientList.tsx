@@ -38,7 +38,7 @@ export default function ClientList() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const canManage = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY'].includes(user.role);
-  const canDelete = user && ['ADMIN', 'MANAGER'].includes(user.role);
+  const canDelete = user && ['ADMIN'].includes(user.role);
 
   useEffect(() => {
     fetchClients();
