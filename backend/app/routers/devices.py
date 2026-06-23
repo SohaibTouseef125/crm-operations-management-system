@@ -10,8 +10,7 @@ from app.schemas.device import DeviceCreate, DeviceUpdate, DeviceInDB, DeviceHis
 from app.services.device_service import DeviceService
 from pydantic import BaseModel
 from app.models.user import User, UserRole
-from app.models.device import DeviceStatus
-from app.models.device import DeviceHistory
+from app.models.device import Device, DeviceStatus, DeviceHistory
 from app.routers.deps import get_current_user_for_middleware, check_role
 from app.core.rbac import DEVICE_READ_ROLES, DEVICE_WRITE_ROLES
 from app.services.activity_log_service import ActivityLogService

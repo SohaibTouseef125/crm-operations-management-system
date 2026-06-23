@@ -331,16 +331,16 @@ export default function ComponentsList() {
                 {canManage && (
                   <button
                     onClick={e => { e.stopPropagation(); setEditingComponent(comp); setIsFormOpen(true); }}
-                    className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors"
+                    className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-100 bg-amber-50 rounded-lg transition-colors"
                     title="Edit Component"
                   >
-                    <Edit3 className="w-4 h-4" />
+                    <Edit3 className="w-5 h-5" />
                   </button>
                 )}
                 {canDelete && (
                   <button
                     onClick={e => { e.stopPropagation(); deleteComponent(comp.id); }}
-                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-200 bg-red-50 rounded-lg transition-colors"
                     title="Delete Component"
                   >
                     <Trash2 className="w-5 h-5" />

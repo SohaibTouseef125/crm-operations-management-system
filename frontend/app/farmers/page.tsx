@@ -58,7 +58,7 @@ export default function FarmersPage() {
   if (isLoading) return <div className="p-8 text-center text-gray-500">Loading farmers...</div>;
 
   return (
-    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS']}>
+    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY']}>
       <DashboardLayout>
         <div className="p-4 space-y-6 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between">

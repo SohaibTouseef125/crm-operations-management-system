@@ -61,7 +61,7 @@ interface Task {
 
 export default function TaskBoard() {
   const { user } = useAuthStore();
-  const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'].includes(user.role);
+  const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role);
   const canDeleteAny = user && ['ADMIN', 'MANAGER'].includes(user.role);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);

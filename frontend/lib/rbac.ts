@@ -31,7 +31,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Farmers',
     href: '/farmers',
     iconName: 'Users',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'],
   },
   // ── Leads / Sales ──
   {
@@ -165,7 +165,7 @@ export const NAV_ITEMS: NavItem[] = [
 export const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/dashboard':      ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/clients':        ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'ACCOUNTS'],
-  '/farmers':        ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
+  '/farmers':        ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'],
   '/leads':          ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'ACCOUNTS'],
   '/reports':        ['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS', 'ACCOUNTS'],
   '/devices':        ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'],

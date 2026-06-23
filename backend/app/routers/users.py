@@ -15,7 +15,7 @@ router = APIRouter()
 async def get_users_by_role(
     role: UserRole,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.BDM]))
 ):
     """Get users filtered by role"""
     query = select(User).where(User.role == role, User.is_active == True)
@@ -27,7 +27,7 @@ async def get_users(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.BDM]))
 ):
     """Get all active users"""
     query = select(User).where(User.is_active == True).offset(skip).limit(limit)
