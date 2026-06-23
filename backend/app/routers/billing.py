@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
+import io
 
 from app.database.session import get_db
 from app.repositories.billing_repository import BillingRepository
 from app.schemas.ops import PaymentCreate, PaymentInDB
+from app.services.report_export_service import generate_excel_report, generate_pdf_report
 from app.schemas.invoice import InvoiceDetailResponse
 from app.models.user import User
 from app.models.billing import Invoice, Payment, InvoiceStatus
@@ -331,3 +334,157 @@ async def outstanding_report(
             for row in rows
         ],
     }
+
+
+# ── Export Endpoints ──────────────────────────────────────────────────────────
+
+@router.get("/reports/export/excel")
+async def export_excel_report(
+    year: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    from datetime import date
+    target_year = year or date.today().year
+
+    monthly_query = select(
+        func.date_trunc('month', Invoice.created_at).label('month'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+        func.extract('year', Invoice.created_at) == target_year,
+    ).group_by('month').order_by('month')
+    monthly_rows = (await db.execute(monthly_query)).all()
+    monthly_revenue = [
+        {"month": r.month.strftime("%Y-%m"), "revenue": float(r.revenue or 0), "invoice_count": r.count}
+        for r in monthly_rows
+    ]
+
+    yearly_query = select(
+        func.extract('year', Invoice.created_at).label('year'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+    ).group_by('year').order_by('year')
+    yearly_rows = (await db.execute(yearly_query)).all()
+    yearly_revenue = [
+        {"year": int(r.year), "revenue": float(r.revenue or 0), "invoice_count": r.count}
+        for r in yearly_rows
+    ]
+
+    inv_summary_query = select(
+        Invoice.status,
+        func.count(Invoice.id).label('count'),
+        func.sum(Invoice.total_amount).label('amount'),
+    ).group_by(Invoice.status)
+    inv_rows = (await db.execute(inv_summary_query)).all()
+    invoice_summary = {}
+    for r in inv_rows:
+        invoice_summary[r.status.value] = {"count": r.count, "amount": float(r.amount or 0)}
+
+    outstanding_query = select(
+        Client.id,
+        Client.name,
+        func.sum(Invoice.total_amount).label('total_invoiced'),
+        func.coalesce(
+            select(func.sum(Payment.amount)).where(Payment.client_id == Client.id).scalar_subquery(), 0
+        ).label('total_paid'),
+    ).join(Invoice, Invoice.client_id == Client.id).where(
+        Invoice.status.not_in([InvoiceStatus.PAID, InvoiceStatus.CANCELLED]),
+    ).group_by(Client.id, Client.name).order_by(Client.name)
+    outstanding_rows = (await db.execute(outstanding_query)).all()
+    outstanding = [
+        {
+            "client_id": str(r.id),
+            "client_name": r.name,
+            "total_invoiced": float(r.total_invoiced or 0),
+            "total_paid": float(r.total_paid or 0),
+            "outstanding": float((r.total_invoiced or 0) - (r.total_paid or 0)),
+        }
+        for r in outstanding_rows
+    ]
+
+    excel_bytes = generate_excel_report(monthly_revenue, yearly_revenue, invoice_summary, outstanding)
+    return StreamingResponse(
+        io.BytesIO(excel_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=financial_report_{target_year}.xlsx"},
+    )
+
+
+@router.get("/reports/export/pdf")
+async def export_pdf_report(
+    year: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+):
+    from datetime import date
+    target_year = year or date.today().year
+
+    monthly_query = select(
+        func.date_trunc('month', Invoice.created_at).label('month'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+        func.extract('year', Invoice.created_at) == target_year,
+    ).group_by('month').order_by('month')
+    monthly_rows = (await db.execute(monthly_query)).all()
+    monthly_revenue = [
+        {"month": r.month.strftime("%Y-%m"), "revenue": float(r.revenue or 0), "invoice_count": r.count}
+        for r in monthly_rows
+    ]
+
+    yearly_query = select(
+        func.extract('year', Invoice.created_at).label('year'),
+        func.sum(Invoice.total_amount).label('revenue'),
+        func.count(Invoice.id).label('count'),
+    ).where(
+        Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID]),
+    ).group_by('year').order_by('year')
+    yearly_rows = (await db.execute(yearly_query)).all()
+    yearly_revenue = [
+        {"year": int(r.year), "revenue": float(r.revenue or 0), "invoice_count": r.count}
+        for r in yearly_rows
+    ]
+
+    inv_summary_query = select(
+        Invoice.status,
+        func.count(Invoice.id).label('count'),
+        func.sum(Invoice.total_amount).label('amount'),
+    ).group_by(Invoice.status)
+    inv_rows = (await db.execute(inv_summary_query)).all()
+    invoice_summary = {}
+    for r in inv_rows:
+        invoice_summary[r.status.value] = {"count": r.count, "amount": float(r.amount or 0)}
+
+    outstanding_query = select(
+        Client.id,
+        Client.name,
+        func.sum(Invoice.total_amount).label('total_invoiced'),
+        func.coalesce(
+            select(func.sum(Payment.amount)).where(Payment.client_id == Client.id).scalar_subquery(), 0
+        ).label('total_paid'),
+    ).join(Invoice, Invoice.client_id == Client.id).where(
+        Invoice.status.not_in([InvoiceStatus.PAID, InvoiceStatus.CANCELLED]),
+    ).group_by(Client.id, Client.name).order_by(Client.name)
+    outstanding_rows = (await db.execute(outstanding_query)).all()
+    outstanding = [
+        {
+            "client_id": str(r.id),
+            "client_name": r.name,
+            "total_invoiced": float(r.total_invoiced or 0),
+            "total_paid": float(r.total_paid or 0),
+            "outstanding": float((r.total_invoiced or 0) - (r.total_paid or 0)),
+        }
+        for r in outstanding_rows
+    ]
+
+    pdf_bytes = generate_pdf_report(monthly_revenue, yearly_revenue, invoice_summary, outstanding)
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=financial_report_{target_year}.pdf"},
+    )

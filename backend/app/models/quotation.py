@@ -24,6 +24,8 @@ class Quotation(Base, IDMixin, TimestampMixin):
     discount: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
     grand_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0)
     
+    status: Mapped[str] = mapped_column(String(20), default="DRAFT", nullable=False)
+    
     terms_and_conditions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     

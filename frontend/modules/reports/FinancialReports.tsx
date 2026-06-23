@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
-import { BarChart3, DollarSign, TrendingUp, FileText, Download } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, FileText, Download, FileSpreadsheet } from 'lucide-react';
 
 interface MonthlyRevenue { month: string; revenue: number; invoice_count: number; }
 interface YearlyRevenue { year: number; revenue: number; invoice_count: number; }
@@ -27,17 +27,50 @@ export default function FinancialReports() {
     .finally(() => setLoading(false));
   }, []);
 
+  const handleExport = useCallback(async (format: 'excel' | 'pdf') => {
+    const year = new Date().getFullYear();
+    try {
+      const response = await api.get(`/billing/reports/export/${format}`, {
+        params: { year },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `financial_report_${year}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`${format.toUpperCase()} report downloaded`);
+    } catch {
+      toast.error(`Failed to download ${format.toUpperCase()} report`);
+    }
+  }, []);
+
   if (loading) return <p className="text-gray-500">Loading...</p>;
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        {(['revenue', 'invoices', 'payments'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-            {t === 'revenue' ? 'Revenue Reports' : t === 'invoices' ? 'Invoice Reports' : 'Payment Reports'}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          {(['revenue', 'invoices', 'payments'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${tab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+              {t === 'revenue' ? 'Revenue Reports' : t === 'invoices' ? 'Invoice Reports' : 'Payment Reports'}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => handleExport('excel')}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+            <FileSpreadsheet size={16} /> Excel
           </button>
-        ))}
+          <button onClick={() => handleExport('pdf')}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">
+            <Download size={16} /> PDF
+          </button>
+        </div>
       </div>
 
       {tab === 'revenue' && (

@@ -18,7 +18,7 @@ async def read_farms(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY, UserRole.HARDWARE]))
 ):
     repo = FarmRepository(db)
     return await repo.get_all(skip=skip, limit=limit, farmer_id=farmer_id)
@@ -27,7 +27,7 @@ async def read_farms(
 async def create_farm(
     farm_in: FarmCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.HARDWARE]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY, UserRole.HARDWARE]))
 ):
     repo = FarmRepository(db)
     farm = await repo.create(farm_in)
@@ -43,7 +43,7 @@ async def create_farm(
 async def read_farm(
     farm_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY, UserRole.HARDWARE]))
 ):
     repo = FarmRepository(db)
     farm = await repo.get_by_id(farm_id)

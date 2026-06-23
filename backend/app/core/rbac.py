@@ -116,4 +116,5 @@ TASK_CREATE_ROLES = [
     UserRole.MANAGER,
     UserRole.BUSINESS,
     UserRole.ACCOUNTS,
+    UserRole.AGRONOMY,
 ]

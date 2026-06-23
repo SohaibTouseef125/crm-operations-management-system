@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, TrendingUp, Cpu, CheckSquare,
   Package, CreditCard, Bell, Activity, LogOut, X,
-  FileText, AlertCircle, UserCog, BarChart2, CircuitBoard,
+  FileText, AlertCircle, UserCog, BarChart2, CircuitBoard, Calendar,
 } from 'lucide-react';
 import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
@@ -16,7 +16,7 @@ import { NAV_ITEMS } from '@/lib/rbac';
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Users, TrendingUp, Cpu, CheckSquare,
   Package, CreditCard, Bell, Activity, FileText,
-  AlertCircle, UserCog, BarChart2, CircuitBoard,
+  AlertCircle, UserCog, BarChart2, CircuitBoard, Calendar,
 };
 
 interface SidebarProps {

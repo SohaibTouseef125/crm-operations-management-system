@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,6 +15,7 @@ const farmerSchema = z.object({
   village: z.string().optional().nullable(),
   district: z.string().optional().nullable(),
   pipeline_stage: z.enum(['prospect', 'active', 'inactive']),
+  client_id: z.string().optional().nullable(),
 });
 
 type FarmerFormData = z.infer<typeof farmerSchema>;
@@ -28,6 +29,13 @@ interface FarmerFormModalProps {
 export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFormModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clients, setClients] = useState<{id: string; name: string; company_name: string}[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/clients').then(r => setClients(r.data)).catch(() => {});
+    }
+  }, [isOpen]);
 
   const {
     register,
@@ -50,6 +58,7 @@ export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFo
         cnic: data.cnic || null,
         village: data.village || null,
         district: data.district || null,
+        client_id: data.client_id || null,
       });
       onSuccess();
       reset();
@@ -118,6 +127,17 @@ export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFo
                 <option value="inactive">Inactive</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Assign to Client</label>
+            <select {...register('client_id')}
+              className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none">
+              <option value="">None (create independent farmer)</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.name} — {c.company_name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

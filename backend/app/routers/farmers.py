@@ -17,9 +17,8 @@ async def read_farmers(
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY, UserRole.ACCOUNTS]))
 ):
-    # RBAC: Most roles can view farmers
     repo = FarmerRepository(db)
     return await repo.get_all(skip=skip, limit=limit)
 
@@ -27,7 +26,7 @@ async def read_farmers(
 async def create_farmer(
     farmer_in: FarmerCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY]))
 ):
     repo = FarmerRepository(db)
     farmer = await repo.create(farmer_in)
@@ -42,7 +41,7 @@ async def create_farmer(
 async def read_farmer(
     farmer_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY, UserRole.ACCOUNTS]))
 ):
     repo = FarmerRepository(db)
     farmer = await repo.get_by_id(farmer_id)
@@ -55,7 +54,7 @@ async def update_farmer(
     farmer_id: UUID,
     farmer_in: FarmerUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.BUSINESS, UserRole.AGRONOMY]))
 ):
     repo = FarmerRepository(db)
     db_farmer = await repo.get_by_id(farmer_id)

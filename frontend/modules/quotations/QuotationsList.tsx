@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
-import { FileText, Plus, ArrowRight, Trash2, XCircle, Mail, Download, Copy } from 'lucide-react';
+import { FileText, Plus, ArrowRight, Trash2, XCircle, Mail, Download, Copy, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 
 interface Quotation {
@@ -20,6 +20,7 @@ interface Quotation {
   grand_total: number;
   terms_and_conditions: string | null;
   notes: string | null;
+  status?: string;
   created_at: string;
 }
 
@@ -40,6 +41,7 @@ export default function QuotationsList() {
   const canWrite = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
   const canDelete = user && ['ADMIN'].includes(user.role);
   const canConvert = user && ['ADMIN', 'ACCOUNTS'].includes(user.role);
+  const canApprove = user && ['ADMIN'].includes(user.role);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -119,6 +121,14 @@ export default function QuotationsList() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch { toast.error('Failed to download PDF'); }
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await api.post(`/quotations/${id}/approve`);
+      toast.success('Quotation approved');
+      fetchQuotations();
+    } catch { toast.error('Failed to approve'); }
   };
 
   const handleDuplicate = async (id: string) => {
@@ -371,6 +381,12 @@ export default function QuotationsList() {
                       <button onClick={() => handleDuplicate(q.id)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-cyan-50 text-cyan-700 rounded-md hover:bg-cyan-100 text-sm font-medium transition-colors">
                         <Copy size={14} /> Duplicate
+                      </button>
+                    )}
+                    {canApprove && q.status === 'DRAFT' && (
+                      <button onClick={() => handleApprove(q.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100 text-sm font-medium transition-colors">
+                        <CheckCircle size={14} /> Approve
                       </button>
                     )}
                     {canConvert && (

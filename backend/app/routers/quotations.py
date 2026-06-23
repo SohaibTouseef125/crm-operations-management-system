@@ -9,7 +9,7 @@ from pydantic import BaseModel, EmailStr
 from app.database.session import get_db
 from app.repositories.quotation_repository import QuotationRepository
 from app.repositories.invoice_repository import InvoiceRepository
-from app.schemas.quotation import QuotationCreate, QuotationUpdate, QuotationInDB, QuotationItemBase
+from app.schemas.quotation import QuotationCreate, QuotationUpdate, QuotationInDB, QuotationItemBase, QuotationApprove
 from app.schemas.invoice import InvoiceDetailResponse
 from app.models.user import User, UserRole
 from app.models.client import Client
@@ -91,6 +91,27 @@ async def delete_quotation(
         f"Deleted quotation '{quotation.quote_number}'", entity_id=quotation_id, role=current_user.role
     )
     await repo.delete(quotation)
+
+@router.post("/{quotation_id}/approve", response_model=QuotationInDB)
+async def approve_quotation(
+    quotation_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(check_role([UserRole.ADMIN]))
+):
+    repo = QuotationRepository(db)
+    quotation = await repo.get_by_id(quotation_id)
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    if quotation.status != "DRAFT":
+        raise HTTPException(status_code=422, detail="Only DRAFT quotations can be approved")
+    quotation.status = "APPROVED"
+    await db.commit()
+    await db.refresh(quotation)
+    await ActivityLogService.log_activity(
+        db, current_user.id, current_user.full_name, "APPROVE", "Quotation",
+        f"Approved quotation '{quotation.quote_number}'", entity_id=quotation.id, role=current_user.role
+    )
+    return quotation
 
 @router.post("/{quotation_id}/convert-to-invoice", response_model=InvoiceDetailResponse, status_code=201)
 async def convert_quotation_to_invoice(

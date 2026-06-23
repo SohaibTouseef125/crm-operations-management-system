@@ -10,7 +10,8 @@ from app.database.session import engine, AsyncSessionLocal
 from app.routers import (
     auth, devices, clients, leads, tasks, billing, inventory,
     users, notifications, activity_logs, dashboard, issues, uploads, reports, components,
-    invoices, quotations, farms, farmers, payments, products, services
+    invoices, quotations, farms, farmers, payments, products, services,
+    calendar as calendar_router
 )
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -123,7 +124,9 @@ app.include_router(farmers.router, prefix="/farmers", tags=["Farmers"])
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 app.include_router(products.router, prefix="/products", tags=["Products"])
 app.include_router(services.router, prefix="/services", tags=["Services"])
+app.include_router(documents_router.router, prefix="/clients/{client_id}/documents", tags=["Documents"])
 app.include_router(uploads.router, prefix="/uploads", tags=["File Uploads"])
+app.include_router(calendar_router, prefix="/calendar", tags=["Calendar"])
 
 # Mount uploads after routers to avoid route conflicts
 app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")

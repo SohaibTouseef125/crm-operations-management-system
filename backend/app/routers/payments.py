@@ -16,7 +16,7 @@ router = APIRouter()
 async def read_invoice_payments(
     invoice_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTS, UserRole.BDM, UserRole.BUSINESS]))
 ):
     repo = PaymentRepository(db)
     return await repo.get_by_invoice(invoice_id)

@@ -50,7 +50,7 @@ async def read_client_field_reports(
 async def create_field_report(
     report_in: FieldReportCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.AGRONOMY, UserRole.BUSINESS, UserRole.ACCOUNTS, UserRole.BDM]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.MANAGER, UserRole.AGRONOMY]))
 ):
     repo = ReportRepository(db)
     report = await repo.create(report_in, current_user.id)

@@ -41,6 +41,8 @@ class LeadBase(BaseModel):
     quotation_file_url: Optional[str] = None
     client_id: Optional[UUID] = None
 
+class LeadCreate(LeadBase):
+
     @field_validator("services_interested")
     @classmethod
     def validate_services(cls, v):
@@ -56,9 +58,6 @@ class LeadBase(BaseModel):
         if v is not None and v < date.today():
             raise ValueError("next_follow_up must be >= current date")
         return v
-
-class LeadCreate(LeadBase):
-    pass
 
 class LeadUpdate(BaseModel):
     name: Optional[str] = None

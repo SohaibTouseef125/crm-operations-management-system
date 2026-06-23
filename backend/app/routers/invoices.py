@@ -201,7 +201,7 @@ async def delete_invoice_item(
 async def generate_invoice_pdf(
     invoice_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(INVOICE_WRITE_ROLES)),
+    current_user: User = Depends(check_role(INVOICE_READ_ROLES)),
 ):
     repo = InvoiceRepository(db)
     invoice = await repo.get_invoice_with_items(invoice_id)

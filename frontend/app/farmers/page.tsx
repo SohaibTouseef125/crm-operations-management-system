@@ -50,7 +50,7 @@ export default function FarmersPage() {
         <div className="p-4 space-y-6 sm:p-6 lg:p-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-gray-900">Farmers</h1>
-            {user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role) && (
+            {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'].includes(user.role) && (
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold shadow-sm"

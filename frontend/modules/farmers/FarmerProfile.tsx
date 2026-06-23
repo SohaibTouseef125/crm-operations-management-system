@@ -138,7 +138,7 @@ export default function FarmerProfile({ id }: { id: string }) {
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex items-center justify-between border-b pb-2 mb-4">
             <h3 className="text-lg font-bold text-gray-900">Farms</h3>
-            {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'HARDWARE'].includes(user.role) && (
+            {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE'].includes(user.role) && (
               <button
                 onClick={() => setIsFarmModalOpen(true)}
                 className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold shadow-sm"

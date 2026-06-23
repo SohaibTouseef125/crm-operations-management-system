@@ -15,6 +15,7 @@ class FarmerBase(BaseModel):
     tehsil: Optional[str] = None
     district: Optional[str] = None
     assigned_agent_id: Optional[UUID] = None
+    client_id: Optional[UUID] = None
     pipeline_stage: PipelineStage = PipelineStage.PROSPECT
     lead_source: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -34,6 +35,7 @@ class FarmerUpdate(BaseModel):
     tehsil: Optional[str] = None
     district: Optional[str] = None
     assigned_agent_id: Optional[UUID] = None
+    client_id: Optional[UUID] = None
     pipeline_stage: Optional[PipelineStage] = None
     lead_source: Optional[str] = None
     tags: Optional[List[str]] = None

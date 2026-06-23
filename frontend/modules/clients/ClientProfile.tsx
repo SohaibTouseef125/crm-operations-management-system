@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import ClientIssueModal from './ClientIssueModal';
 import FieldReportModal from './FieldReportModal';
-import { Plus, Calendar, FileText, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, FileText, AlertCircle, Upload, Download, Trash2 } from 'lucide-react';
 
 interface Device {
   id: string;
@@ -49,6 +49,16 @@ interface FieldReport {
   notes: string | null;
   created_at: string;
   attachments: string[] | null;
+}
+
+interface Document {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string | null;
+  file_size: number | null;
+  notes: string | null;
+  created_at: string;
 }
 
 interface Task {
@@ -102,6 +112,7 @@ export default function ClientProfile({ id }: { id: string }) {
   const [issues, setIssues] = useState<ClientIssue[]>([]);
   const [reports, setReports] = useState<FieldReport[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
   const [ledger, setLedger] = useState<{ type: string; amount: number; date: string; status?: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,6 +127,40 @@ export default function ClientProfile({ id }: { id: string }) {
     } catch (error) {
       toast.error(formatApiError(error, 'Failed to load client issues'));
       setIssues([]);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await api.get(`/clients/${id}/documents/${id}`);
+      setDocuments(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setDocuments([]);
+    }
+  };
+
+  const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      await api.post(`/clients/${id}/documents/${id}/upload`, formData);
+      toast.success('Document uploaded');
+      fetchDocuments();
+    } catch (error) {
+      toast.error(formatApiError(error, 'Failed to upload document'));
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Delete this document?')) return;
+    try {
+      await api.delete(`/clients/${id}/documents/${id}/documents/${documentId}`);
+      toast.success('Document deleted');
+      fetchDocuments();
+    } catch (error) {
+      toast.error(formatApiError(error, 'Failed to delete document'));
     }
   };
 
@@ -157,6 +202,13 @@ export default function ClientProfile({ id }: { id: string }) {
         }
 
         try {
+          const docsRes = await api.get(`/clients/${id}/documents/${id}`);
+          setDocuments(Array.isArray(docsRes.data) ? docsRes.data : []);
+        } catch {
+          setDocuments([]);
+        }
+
+        try {
           const balanceRes = await api.get(`/billing/clients/${id}/arrears`);
           setBalance(balanceRes.data.outstanding_balance ?? null);
         } catch {
@@ -193,6 +245,7 @@ export default function ClientProfile({ id }: { id: string }) {
     { id: 'payments', label: 'Payments' },
     { id: 'tasks', label: 'Tasks' },
     { id: 'reports', label: 'Reports' },
+    { id: 'documents', label: 'Documents' },
   ];
 
   return (
@@ -516,6 +569,74 @@ export default function ClientProfile({ id }: { id: string }) {
                 </div>
               ) : (
                 <p className="text-sm text-gray-700 py-4 italic text-center bg-slate-50 rounded-lg border border-dashed border-slate-200">No tasks found.</p>
+              )}
+            </>
+          )}
+
+          {activeTab === 'documents' && (
+            <>
+              <div className="flex items-center justify-between pb-2 mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Documents</h3>
+                {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'ACCOUNTS'].includes(user.role) && (
+                  <label className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold shadow-sm cursor-pointer">
+                    <Upload className="w-3 h-3 mr-1" /> Upload Document
+                    <input type="file" className="hidden" onChange={handleUploadDocument} />
+                  </label>
+                )}
+              </div>
+              {documents.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Name</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Type</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Size</th>
+                        <th className="pb-2 pr-4 font-bold text-gray-700">Date</th>
+                        <th className="pb-2 font-bold text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documents.map((doc) => (
+                        <tr key={doc.id} className="border-b last:border-0 hover:bg-slate-50">
+                          <td className="py-2 pr-4 font-bold text-gray-900 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            <span className="truncate max-w-[200px]">{doc.file_name}</span>
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600 text-xs">{doc.file_type || 'N/A'}</td>
+                          <td className="py-2 pr-4 text-gray-600">
+                            {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : 'N/A'}
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600">{new Date(doc.created_at).toLocaleDateString()}</td>
+                          <td className="py-2 flex items-center gap-2">
+                            <a
+                              href={`/uploads/documents/${doc.file_path.split('\\').pop()?.split('/').pop()}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                            {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                              <button
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-10 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-sm text-gray-700 font-medium">No documents uploaded for this client.</p>
+                </div>
               )}
             </>
           )}

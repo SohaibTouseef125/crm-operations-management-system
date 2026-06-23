@@ -45,7 +45,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Field Reports',
     href: '/reports',
     iconName: 'FileText',
-    roles: ['ADMIN', 'MANAGER', 'AGRONOMY'],
+    roles: ['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS', 'ACCOUNTS'],
   },
   // ── Devices ──
   {
@@ -53,6 +53,13 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/devices',
     iconName: 'Cpu',
     roles: ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'],
+  },
+  // ── Calendar / Visits ──
+  {
+    name: 'Calendar',
+    href: '/calendar',
+    iconName: 'Calendar',
+    roles: ['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS'],
   },
   // ── Inventory / Components ──
   {
@@ -79,14 +86,14 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Products',
     href: '/products',
     iconName: 'Package',
-    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
   },
   // ── Services ──
   {
     name: 'Services',
     href: '/services',
     iconName: 'Wrench',
-    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
   },
   // ── Quotations ──
   {
@@ -120,7 +127,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Tasks',
     href: '/tasks',
     iconName: 'CheckSquare',
-    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS'],
+    roles: ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY'],
   },
   // ── Performance ──
   {
@@ -147,7 +154,7 @@ export const NAV_ITEMS: NavItem[] = [
     name: 'Users',
     href: '/users',
     iconName: 'UserCog',
-    roles: ['ADMIN', 'MANAGER'],
+    roles: ['ADMIN'],
   },
 ];
 
@@ -160,8 +167,9 @@ export const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/clients':        ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'ACCOUNTS'],
   '/farmers':        ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'ACCOUNTS'],
   '/leads':          ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'ACCOUNTS'],
-  '/reports':        ['ADMIN', 'MANAGER', 'AGRONOMY'],
+  '/reports':        ['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS', 'ACCOUNTS'],
   '/devices':        ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'],
+  '/calendar':       ['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS'],
   '/inventory':      ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/components':     ['ADMIN', 'MANAGER', 'HARDWARE'],
   '/issues':         ['ADMIN', 'MANAGER', 'BUSINESS'],
@@ -171,11 +179,11 @@ export const ROUTE_ROLES: Record<string, UserRole[]> = {
   '/services':            ['ADMIN', 'MANAGER', 'BDM', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY', 'HARDWARE'],
   '/quotations':          ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS'],
   '/financial-reports':   ['ADMIN', 'MANAGER', 'ACCOUNTS', 'BUSINESS', 'BDM'],
-  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS'],
+  '/tasks':          ['ADMIN', 'MANAGER', 'BUSINESS', 'ACCOUNTS', 'AGRONOMY'],
   '/performance':    ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/notifications':  ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
   '/activity-logs':  ['ADMIN', 'MANAGER'],
-  '/users':          ['ADMIN', 'MANAGER'],
+  '/users':          ['ADMIN'],
   '/unauthorized':   ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY', 'HARDWARE', 'ACCOUNTS', 'EMPLOYEE'],
 };
 

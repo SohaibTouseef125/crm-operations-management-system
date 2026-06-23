@@ -8,6 +8,7 @@ import uuid
 
 if TYPE_CHECKING:
     from app.models.farm import Farm
+    from app.models.client import Client
 
 class PipelineStage(str, enum.Enum):
     PROSPECT = "prospect"
@@ -42,6 +43,9 @@ class Farmer(Base, IDMixin, TimestampMixin):
     total_contract_value: Mapped[float] = mapped_column(Float, default=0.0)
     outstanding_balance: Mapped[float] = mapped_column(Float, default=0.0)
 
+    client_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("clients.id"), nullable=True)
+
     # Relationships
     assigned_agent: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_agent_id])
+    client: Mapped[Optional["Client"]] = relationship("Client", back_populates="farmers")
     farms: Mapped[list["Farm"]] = relationship("Farm", back_populates="farmer", cascade="all, delete-orphan")

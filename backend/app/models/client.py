@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from app.models.billing import Invoice, Payment
     from app.models.report import FieldReport
     from app.models.quotation import Quotation
+    from app.models.document import ClientDocument
+    from app.models.farmer import Farmer
 
 class ContractStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
@@ -45,6 +47,7 @@ class Client(Base, IDMixin, TimestampMixin):
     contract_status: Mapped[Optional[ContractStatus]] = mapped_column(SQLAlchemyEnum(ContractStatus), nullable=True)
 
     # Relationships
+    farmers: Mapped[List["Farmer"]] = relationship("Farmer", back_populates="client", cascade="all, delete-orphan")
     devices: Mapped[List["Device"]] = relationship("Device", back_populates="client", lazy="selectin")
     leads: Mapped[List["Lead"]] = relationship("Lead", back_populates="client", cascade="all, delete-orphan")
     issues: Mapped[List["ClientIssue"]] = relationship("ClientIssue", back_populates="client", cascade="all, delete-orphan")
@@ -52,3 +55,4 @@ class Client(Base, IDMixin, TimestampMixin):
     payments: Mapped[List["Payment"]] = relationship("Payment", back_populates="client", cascade="all, delete-orphan")
     field_reports: Mapped[List["FieldReport"]] = relationship("FieldReport", back_populates="client", cascade="all, delete-orphan")
     quotations: Mapped[List["Quotation"]] = relationship("Quotation", back_populates="client", cascade="all, delete-orphan")
+    documents: Mapped[List["ClientDocument"]] = relationship("ClientDocument", back_populates="client", cascade="all, delete-orphan")

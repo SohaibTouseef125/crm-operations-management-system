@@ -21,6 +21,7 @@ class QuotationBase(BaseModel):
     grand_total: Optional[Decimal] = None
     terms_and_conditions: Optional[str] = None
     notes: Optional[str] = None
+    status: Optional[str] = None
 
 class QuotationCreate(QuotationBase):
     items: List[QuotationItemBase]
@@ -29,6 +30,9 @@ class QuotationUpdate(BaseModel):
     expiry_date: Optional[date] = None
     terms_and_conditions: Optional[str] = None
     notes: Optional[str] = None
+
+class QuotationApprove(BaseModel):
+    pass
 
 class QuotationItemInDB(QuotationItemBase):
     id: UUID

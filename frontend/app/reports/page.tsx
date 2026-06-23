@@ -4,7 +4,7 @@ import FieldReportsList from '@/modules/reports/FieldReportsList';
 
 export default function ReportsPage() {
   return (
-    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'AGRONOMY']}>
+    <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'AGRONOMY', 'BUSINESS', 'ACCOUNTS']}>
       <DashboardLayout>
         <div className="p-4 space-y-6 sm:p-6 lg:p-8">
           <h1 className="text-3xl font-bold text-gray-900">Field Reports</h1>

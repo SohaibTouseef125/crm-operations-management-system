@@ -16,6 +16,7 @@ const farmSchema = z.object({
   ),
   location_address: z.string().optional().nullable(),
   primary_crop: z.string().optional().nullable(),
+  secondary_crop: z.string().optional().nullable(),
 });
 
 type FarmFormData = z.infer<typeof farmSchema>;
@@ -50,6 +51,7 @@ export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: 
         total_acreage: data.total_acreage,
         location_address: data.location_address || null,
         primary_crop: data.primary_crop || null,
+        secondary_crop: data.secondary_crop || null,
       });
       onSuccess();
       reset();
@@ -115,6 +117,15 @@ export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: 
               {...register('primary_crop')}
               className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
               placeholder="e.g., Wheat, Cotton"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Secondary Crop</label>
+            <input
+              {...register('secondary_crop')}
+              className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="e.g., Mustard, Pulses"
             />
           </div>
 
