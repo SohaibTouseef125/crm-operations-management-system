@@ -133,7 +133,7 @@ async def update_issue(
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
 
-    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and issue.assigned_to_id != current_user.id:
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
         raise HTTPException(status_code=403, detail="Not authorized to update this issue")
 
     previous_values = {

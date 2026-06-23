@@ -143,7 +143,7 @@ export default function IssuesList() {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role);
-  const canUpdate = user && ['ADMIN', 'MANAGER', 'BUSINESS'].includes(user.role);
+  const canUpdate = user && ['ADMIN', 'MANAGER'].includes(user.role);
 
   const fetchIssues = async () => {
     try {

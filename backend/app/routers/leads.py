@@ -46,7 +46,7 @@ async def read_leads(
 async def create_lead(
     lead_in: LeadCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.BDM]))
+    current_user: User = Depends(check_role([UserRole.ADMIN, UserRole.BDM, UserRole.BUSINESS]))
 ):
     repo = LeadRepository(db)
     lead = await repo.create(lead_in)

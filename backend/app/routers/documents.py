@@ -18,7 +18,7 @@ router = APIRouter()
 
 UPLOAD_DIR = "uploads/documents"
 
-@router.get("/{client_id}", response_model=List[ClientDocumentInDB])
+@router.get("/", response_model=List[ClientDocumentInDB])
 async def list_client_documents(
     client_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -29,7 +29,7 @@ async def list_client_documents(
     )
     return result.scalars().all()
 
-@router.post("/{client_id}/upload", response_model=ClientDocumentInDB, status_code=201)
+@router.post("/upload", response_model=ClientDocumentInDB, status_code=201)
 async def upload_client_document(
     client_id: UUID,
     file: UploadFile = File(...),
@@ -64,7 +64,7 @@ async def upload_client_document(
     )
     return doc
 
-@router.delete("/{client_id}/documents/{document_id}", status_code=204)
+@router.delete("/{document_id}", status_code=204)
 async def delete_client_document(
     client_id: UUID,
     document_id: UUID,

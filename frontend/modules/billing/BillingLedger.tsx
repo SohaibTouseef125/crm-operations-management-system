@@ -455,14 +455,15 @@ export default function BillingLedger() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{new Date(invoice.due_date).toLocaleDateString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex items-center justify-end gap-3">
+                      {invoice.file_path && (
                       <button
                         onClick={() => handleDownload(invoice)}
-                        title={invoice.file_path ? 'Download file' : 'No file attached'}
-                        className={`flex items-center gap-1 text-xs font-bold transition-colors ${invoice.file_path ? 'text-blue-600 hover:text-blue-800' : 'text-gray-400 cursor-not-allowed'}`}
-                        disabled={!invoice.file_path}
+                        title="Download file"
+                        className="flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
                       >
                         <Download className="w-3.5 h-3.5" /> Download
                       </button>
+                      )}
 
                       {canManageBilling && (
                         <label className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">

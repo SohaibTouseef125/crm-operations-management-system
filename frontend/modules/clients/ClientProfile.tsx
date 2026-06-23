@@ -132,7 +132,7 @@ export default function ClientProfile({ id }: { id: string }) {
 
   const fetchDocuments = async () => {
     try {
-      const res = await api.get(`/clients/${id}/documents/${id}`);
+      const res = await api.get(`/clients/${id}/documents/`);
       setDocuments(Array.isArray(res.data) ? res.data : []);
     } catch {
       setDocuments([]);
@@ -145,7 +145,7 @@ export default function ClientProfile({ id }: { id: string }) {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      await api.post(`/clients/${id}/documents/${id}/upload`, formData);
+      await api.post(`/clients/${id}/documents/upload`, formData);
       toast.success('Document uploaded');
       fetchDocuments();
     } catch (error) {
@@ -156,7 +156,7 @@ export default function ClientProfile({ id }: { id: string }) {
   const handleDeleteDocument = async (documentId: string) => {
     if (!confirm('Delete this document?')) return;
     try {
-      await api.delete(`/clients/${id}/documents/${id}/documents/${documentId}`);
+      await api.delete(`/clients/${id}/documents/${documentId}`);
       toast.success('Document deleted');
       fetchDocuments();
     } catch (error) {

@@ -7,6 +7,7 @@ import * as z from 'zod';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
+import { useAuthStore } from '@/store/auth/useAuthStore';
 
 const SERVICES_OPTIONS = ['AquaSave Pro', 'Ag5x', 'Faas', 'Drone Spray', 'Drone Survey'] as const;
 
@@ -21,7 +22,7 @@ const leadSchema = z.object({
     'discovery', 'outreach', 'quotation_requested', 'quotation_forwarded',
     'in-negotiation', 'won', 'lost',
   ]),
-  assigned_to_id: z.string().min(1, 'Assigned team member is required'),
+  assigned_to_id: z.string().optional().nullable(),
   next_follow_up: z.string().optional().nullable(),
   services_interested: z.array(z.string()).optional(),
   other_services: z.string().optional().nullable(),
@@ -53,6 +54,8 @@ export default function LeadFormModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserOption[]>([]);
+  const { user: currentUser } = useAuthStore();
+  const isBusiness = currentUser?.role === 'BUSINESS';
 
   const {
     register,
@@ -69,10 +72,10 @@ export default function LeadFormModal({
   const selectedServices = watch('services_interested') || [];
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isBusiness) {
       api.get('/users?limit=100').then(r => setUsers(r.data)).catch(() => {});
     }
-  }, [isOpen]);
+  }, [isOpen, isBusiness]);
 
   const toggleService = (svc: string) => {
     const current = selectedServices;
@@ -170,8 +173,9 @@ export default function LeadFormModal({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!isBusiness && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Assigned To *</label>
+              <label className="block text-sm font-medium text-gray-700">Assigned To</label>
               <select {...register('assigned_to_id')}
                 className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none">
                 <option value="">Select team member</option>
@@ -181,6 +185,7 @@ export default function LeadFormModal({
               </select>
               {errors.assigned_to_id && <p className="mt-1 text-xs text-red-500">{errors.assigned_to_id.message}</p>}
             </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700">Stage *</label>
               <select {...register('stage')}

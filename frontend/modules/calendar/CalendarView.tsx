@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { Calendar, CheckCircle, XCircle, Clock, MapPin } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, Clock, MapPin, Plus } from 'lucide-react';
 
 interface CalendarEvent {
   id: string;
@@ -40,9 +40,13 @@ export default function CalendarView() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
+  const [saving, setSaving] = useState(false);
 
   const canManage = user && ['ADMIN', 'MANAGER'].includes(user.role);
   const canComplete = user && ['ADMIN', 'MANAGER', 'AGRONOMY'].includes(user.role);
+  const canCreate = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'].includes(user.role);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -57,6 +61,19 @@ export default function CalendarView() {
   };
 
   useEffect(() => { fetchEvents(); }, []);
+
+  const handleCreate = async () => {
+    if (!form.title || !form.event_date) { toast.error('Title and date are required'); return; }
+    setSaving(true);
+    try {
+      await api.post('/calendar', form);
+      toast.success('Event created');
+      setShowForm(false);
+      setForm({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
+      fetchEvents();
+    } catch { toast.error('Failed to create event'); }
+    finally { setSaving(false); }
+  };
 
   const handleComplete = async (id: string) => {
     try {
@@ -81,16 +98,70 @@ export default function CalendarView() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-        {['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'].map(s => (
-          <button key={s} onClick={() => setFilterStatus(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer ${
-              filterStatus === s ? 'bg-blue-600 text-white' : 'bg-white border text-gray-700 hover:bg-gray-50'
-            }`}>
-            {s === 'ALL' ? 'All' : s.replace(/_/g, ' ')}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {['ALL', 'SCHEDULED', 'COMPLETED', 'CANCELLED'].map(s => (
+            <button key={s} onClick={() => setFilterStatus(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer ${
+                filterStatus === s ? 'bg-blue-600 text-white' : 'bg-white border text-gray-700 hover:bg-gray-50'
+              }`}>
+              {s === 'ALL' ? 'All' : s.replace(/_/g, ' ')}
+            </button>
+          ))}
+        </div>
+        {canCreate && (
+          <button onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
+            <Plus className="w-4 h-4" /> New Event
           </button>
-        ))}
+        )}
       </div>
+
+      {showForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full mx-4 shadow-xl p-6 space-y-4">
+            <h2 className="text-lg font-bold text-gray-900">New Calendar Event</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+                rows={2} className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <select value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="FIELD_VISIT">Field Visit</option>
+                  <option value="REPORTING">Reporting</option>
+                  <option value="QA">QA</option>
+                  <option value="FOLLOW_UP">Follow Up</option>
+                  <option value="MEETING">Meeting</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                <input type="date" value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })}
+                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium text-sm">Cancel</button>
+              <button onClick={handleCreate} disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold text-sm">Create</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3">
         {sorted.length === 0 ? (

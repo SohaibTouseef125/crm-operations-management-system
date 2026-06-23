@@ -39,6 +39,7 @@ interface FormItem {
 export default function QuotationsList() {
   const { user } = useAuthStore();
   const canWrite = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
+  const canEmail = user && ['ADMIN', 'MANAGER', 'ACCOUNTS'].includes(user.role);
   const canDelete = user && ['ADMIN'].includes(user.role);
   const canConvert = user && ['ADMIN', 'ACCOUNTS'].includes(user.role);
   const canApprove = user && ['ADMIN'].includes(user.role);
@@ -369,10 +370,12 @@ export default function QuotationsList() {
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   <span className="text-sm text-gray-500">Date: {q.date}</span>
                   <div className="flex gap-2 flex-wrap">
+                    {canEmail && (
                     <button onClick={() => handleEmailOpen(q.id, q.quote_number)}
                       className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 text-sm font-medium transition-colors">
                       <Mail size={14} /> Email
                     </button>
+                    )}
                     <button onClick={() => handleDownloadPdf(q.id, q.quote_number)}
                       className="flex items-center gap-1 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-md hover:bg-amber-100 text-sm font-medium transition-colors">
                       <Download size={14} /> PDF

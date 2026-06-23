@@ -105,6 +105,17 @@ function HardwareDashboard({ data }: { data: any }) {
   );
 }
 
+function EmployeeDashboard({ data }: { data: any }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <StatCard title="Total Tasks" value={data?.total_tasks ?? 0} icon={CheckSquare} color="text-blue-600" bg="bg-blue-100" />
+      <StatCard title="Pending" value={data?.pending_tasks ?? 0} icon={CheckSquare} color="text-yellow-600" bg="bg-yellow-100" />
+      <StatCard title="In Progress" value={data?.in_progress_tasks ?? 0} icon={CheckSquare} color="text-indigo-600" bg="bg-indigo-100" />
+      <StatCard title="Completed" value={data?.completed_tasks ?? 0} icon={CheckSquare} color="text-green-600" bg="bg-green-100" />
+    </div>
+  );
+}
+
 function AccountsDashboard({ data }: { data: any }) {
   const invoicesByStatus = Object.entries(data?.invoices_by_status ?? {}).map(([name, value]) => ({
     name: name.replace(/_/g, ' '), value: Number(value),
@@ -254,6 +265,7 @@ export default function DashboardPage() {
               {user?.role === 'AGRONOMY' && <AgronomyDashboard data={stats} />}
               {user?.role === 'HARDWARE' && <HardwareDashboard data={stats} />}
               {user?.role === 'ACCOUNTS' && <AccountsDashboard data={stats} />}
+              {user?.role === 'EMPLOYEE' && <EmployeeDashboard data={stats} />}
 
               {/* Alerts — shown if any */}
               {alerts.length > 0 && (

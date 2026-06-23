@@ -39,15 +39,8 @@ async def get_dashboard_stats(
     elif role == UserRole.BDM:
         return await _business_dashboard(db)
     else:
-        # EMPLOYEE — basic task stats
-        tasks_result = await db.execute(
-            select(func.count(Task.id)).where(
-                Task.assigned_to_id == current_user.id,
-                Task.status == TaskStatus.PENDING
-            )
-        )
-        stats["pending_tasks"] = tasks_result.scalar()
-        return stats
+        # EMPLOYEE — task stats
+        return await _employee_dashboard(db, current_user)
 
 
 async def _admin_dashboard(db: AsyncSession, current_user: User) -> dict:
@@ -192,6 +185,44 @@ async def _hardware_dashboard(db: AsyncSession) -> dict:
         select(func.count(ClientIssue.id)).where(ClientIssue.status == IssueStatus.OPEN)
     )
     stats["open_issues"] = open_issues_r.scalar()
+
+    return stats
+
+
+async def _employee_dashboard(db: AsyncSession, current_user: User) -> dict:
+    stats = {}
+    total_r = await db.execute(
+        select(func.count(Task.id)).where(Task.assigned_to_id == current_user.id)
+    )
+    stats["total_tasks"] = total_r.scalar()
+
+    pending_r = await db.execute(
+        select(func.count(Task.id)).where(
+            Task.assigned_to_id == current_user.id,
+            Task.status == TaskStatus.PENDING
+        )
+    )
+    stats["pending_tasks"] = pending_r.scalar()
+
+    in_progress_r = await db.execute(
+        select(func.count(Task.id)).where(
+            Task.assigned_to_id == current_user.id,
+            Task.status == TaskStatus.IN_PROGRESS
+        )
+    )
+    stats["in_progress_tasks"] = in_progress_r.scalar()
+
+    completed_r = await db.execute(
+        select(func.count(Task.id)).where(
+            Task.assigned_to_id == current_user.id,
+            Task.status == TaskStatus.COMPLETED
+        )
+    )
+    stats["completed_tasks"] = completed_r.scalar()
+
+    total = stats["total_tasks"] or 1
+    completed = stats["completed_tasks"] or 0
+    stats["efficiency"] = round((completed / total) * 100, 1)
 
     return stats
 
