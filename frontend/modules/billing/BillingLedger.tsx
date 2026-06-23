@@ -491,7 +491,7 @@ export default function BillingLedger() {
                       {canDeleteUpload && invoice.file_path && (
                         <button
                           onClick={() => handleDeleteFile(invoice)}
-                          className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                           title="Delete File"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

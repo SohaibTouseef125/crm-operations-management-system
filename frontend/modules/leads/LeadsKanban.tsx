@@ -6,7 +6,7 @@ import LeadFormModal, { type LeadFormData } from './LeadFormModal';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { FileText, Plus, UserCheck, Calendar, Trash2, XCircle, Edit3 } from 'lucide-react';
+import { FileText, Plus, UserCheck, Calendar, Trash2, XCircle, Edit3, Eye, Upload, X, Download, ExternalLink } from 'lucide-react';
 
 // ── Spec-defined stages ──────────────────────────────────
 const STAGES = [
@@ -46,6 +46,7 @@ interface Lead {
   location: string;
   stage: string;
   assigned_to_id: string;
+  client_id?: string | null;
   next_follow_up?: string;
   services_interested?: string[];
   quotation_file_url?: string;
@@ -55,6 +56,114 @@ interface Lead {
 
 const STORAGE_KEY = 'leads_kanban_collapsed';
 
+// ── Lead Detail View Modal ────────────────────────────────
+function LeadDetailModal({ lead, onClose }: { lead: Lead | null; onClose: () => void }) {
+  if (!lead) return null;
+  const getQuotationUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    const PRODUCTION_API_URL = 'https://sohaib125-crm-operations-management-system.hf.space';
+    const API_BASE = (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
+      ? PRODUCTION_API_URL
+      : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/').replace(/\/$/, '');
+    return `${API_BASE}/${url.replace(/\\/g, '/')}`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Lead Details</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors cursor-pointer">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Name</label>
+              <p className="text-gray-900 font-bold">{lead.name}</p>
+            </div>
+            {lead.company_name && (
+              <div>
+                <label className="text-xs text-gray-500 font-medium">Company</label>
+                <p className="text-gray-900">{lead.company_name}</p>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Contact</label>
+              <p className="text-gray-900">{lead.contact_mobile}</p>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Location</label>
+              <p className="text-gray-900">{lead.location}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Current Stage</label>
+              <span className="text-xs font-black px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 inline-block mt-1">
+                {STAGES.find(s => s.key === lead.stage)?.label || lead.stage}
+              </span>
+            </div>
+            {lead.next_follow_up && (
+              <div>
+                <label className="text-xs text-gray-500 font-medium">Next Follow-up</label>
+                <p className="text-gray-900">{lead.next_follow_up}</p>
+              </div>
+            )}
+          </div>
+          {lead.services_interested && lead.services_interested.length > 0 && (
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Services Interested</label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {lead.services_interested.map(s => (
+                  <span key={s} className="text-[10px] px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-medium">{s}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {lead.quotation_file_url && (
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Quotation</label>
+              <a href={getQuotationUrl(lead.quotation_file_url)} target="_blank" rel="noreferrer"
+                className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-blue-50 p-2 rounded mt-1">
+                <Download className="w-4 h-4" /> Download Quotation <ExternalLink className="w-3 h-3 ml-auto" />
+              </a>
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-gray-500 font-medium">Created</label>
+            <p className="text-gray-900">{new Date(lead.created_at).toLocaleString()}</p>
+          </div>
+          {lead.activities && lead.activities.length > 0 && (
+            <div>
+              <label className="text-xs text-gray-500 font-medium">Recent Activity</label>
+              <div className="mt-1 space-y-1">
+                {lead.activities.slice(0, 5).map(a => (
+                  <div key={a.id} className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                    <span className="font-medium">{a.activity_type}</span>
+                    {a.scheduled_at && <> — {new Date(a.scheduled_at).toLocaleDateString()}</>}
+                    {a.notes && <p className="text-gray-500 mt-0.5">{a.notes}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-6 pt-4 border-t">
+          <button onClick={onClose}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium cursor-pointer">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LeadsKanban() {
   const { user } = useAuthStore();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -62,6 +171,7 @@ export default function LeadsKanban() {
   const [showForm, setShowForm] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [activityLog, setActivityLog] = useState<Record<string, LeadActivity[]>>({});
+  const [detailLead, setDetailLead] = useState<Lead | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
     if (typeof window !== 'undefined') {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
@@ -72,6 +182,7 @@ export default function LeadsKanban() {
   const canManage = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM'].includes(user.role);
   const canDelete = user && ['ADMIN', 'MANAGER'].includes(user.role);
   const canUploadQuotation = user && ['ADMIN', 'ACCOUNTS'].includes(user.role);
+  const canConvert = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM'].includes(user.role);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -123,6 +234,39 @@ export default function LeadsKanban() {
     } catch (err: unknown) {
       toast.error(formatApiError(err, 'Failed to update stage'));
     }
+  };
+
+  const handleConvertToClient = async (leadId: string) => {
+    if (!confirm('Convert this won lead to a client? This will create a client record.')) return;
+    try {
+      await api.post(`/leads/${leadId}/convert`);
+      toast.success('Lead converted to client successfully');
+      fetchLeads();
+    } catch (err) {
+      toast.error(formatApiError(err, 'Failed to convert lead'));
+    }
+  };
+
+  const handleUploadQuotation = async (leadId: string) => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.pdf';
+    fileInput.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        await api.post(`/leads/${leadId}/quotation`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        toast.success('Quotation uploaded & status updated');
+        fetchLeads();
+      } catch (err) {
+        toast.error(formatApiError(err, 'Failed to upload quotation'));
+      }
+    };
+    fileInput.click();
   };
 
   const handleDelete = async (leadId: string) => {
@@ -198,6 +342,11 @@ export default function LeadsKanban() {
                         <p className="text-xs text-gray-400 mt-0.5">{lead.location}</p>
                       </div>
                       <div className="flex items-center gap-1 ml-2">
+                        <button onClick={() => setDetailLead(lead)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="View Details">
+                          <Eye size={12} />
+                        </button>
                         {canManage && (
                           <button onClick={() => { setSelectedLead(lead); setShowForm(true); }}
                             className="p-1 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -211,9 +360,23 @@ export default function LeadsKanban() {
                             {STAGES.find(s => s.key === nextStage)?.label || nextStage}
                           </button>
                         ))}
+                        {canUploadQuotation && lead.stage === 'quotation_requested' && (
+                          <button onClick={() => handleUploadQuotation(lead.id)}
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-50 text-green-700 hover:bg-green-100 transition-colors flex items-center gap-0.5"
+                            title="Upload Quotation">
+                            <Upload size={10} /> Quote
+                          </button>
+                        )}
+                        {canConvert && lead.stage === 'won' && !lead.client_id && (
+                          <button onClick={() => handleConvertToClient(lead.id)}
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                            title="Convert to Client">
+                            Convert
+                          </button>
+                        )}
                         {canDelete && (
                           <button onClick={() => handleDelete(lead.id)}
-                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+                            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors">
                             <Trash2 size={12} />
                           </button>
                         )}
@@ -256,6 +419,7 @@ export default function LeadsKanban() {
 
       <LeadFormModal isOpen={showForm} onClose={() => setShowForm(false)}
         onSuccess={fetchLeads} initialData={selectedLead ? { ...selectedLead, stage: selectedLead.stage as LeadFormData['stage'], assigned_to_id: selectedLead.assigned_to_id } : undefined} />
+      <LeadDetailModal lead={detailLead} onClose={() => setDetailLead(null)} />
     </div>
   );
 }

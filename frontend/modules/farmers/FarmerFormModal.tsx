@@ -7,6 +7,7 @@ import * as z from 'zod';
 import api from '@/services/api/axios';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
+import { useAuthStore } from '@/store/auth/useAuthStore';
 
 const farmerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -24,18 +25,16 @@ interface FarmerFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  farmerId?: string | null;
+  initialData?: FarmerFormData | null;
 }
 
-export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFormModalProps) {
+export default function FarmerFormModal({ isOpen, onClose, onSuccess, farmerId, initialData }: FarmerFormModalProps) {
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<{id: string; name: string; company_name: string}[]>([]);
-
-  useEffect(() => {
-    if (isOpen) {
-      api.get('/clients').then(r => setClients(r.data)).catch(() => {});
-    }
-  }, [isOpen]);
+  const isEditing = !!farmerId;
 
   const {
     register,
@@ -49,23 +48,47 @@ export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFo
     },
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/clients').then(r => setClients(r.data)).catch(() => {});
+      if (initialData) {
+        reset({
+          name: initialData.name || '',
+          contact_mobile: initialData.contact_mobile || '',
+          cnic: initialData.cnic || '',
+          village: initialData.village || '',
+          district: initialData.district || '',
+          pipeline_stage: initialData.pipeline_stage || 'prospect',
+          client_id: initialData.client_id || '',
+        });
+      } else {
+        reset({ pipeline_stage: 'prospect' });
+      }
+    }
+  }, [isOpen, initialData, reset]);
+
   const onSubmit = async (data: FarmerFormData) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post('/farmers', {
+      const payload = {
         ...data,
         cnic: data.cnic || null,
         village: data.village || null,
         district: data.district || null,
         client_id: data.client_id || null,
-      });
+      };
+      if (isEditing) {
+        await api.patch(`/farmers/${farmerId}`, payload);
+        toast.success('Farmer updated successfully');
+      } else {
+        await api.post('/farmers', payload);
+        toast.success('Farmer created successfully');
+      }
       onSuccess();
-      reset();
-      toast.success('Farmer created successfully');
       onClose();
     } catch (err: unknown) {
-      const message = formatApiError(err, 'Failed to create farmer');
+      const message = formatApiError(err, isEditing ? 'Failed to update farmer' : 'Failed to create farmer');
       toast.error(message);
       setError(message);
     } finally {
@@ -78,7 +101,7 @@ export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFo
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-xl">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">Create Farmer</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">{isEditing ? 'Edit Farmer' : 'Create Farmer'}</h2>
 
         {error && (
           <div className="p-3 mb-4 text-sm text-red-600 bg-red-100 border border-red-200 rounded">
@@ -170,7 +193,7 @@ export default function FarmerFormModal({ isOpen, onClose, onSuccess }: FarmerFo
               disabled={isLoading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-bold"
             >
-              {isLoading ? 'Creating...' : 'Create Farmer'}
+              {isLoading ? 'Saving...' : isEditing ? 'Update Farmer' : 'Create Farmer'}
             </button>
           </div>
         </form>

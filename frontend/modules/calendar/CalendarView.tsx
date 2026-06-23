@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { Calendar, CheckCircle, XCircle, Clock, MapPin, Plus, Trash2 } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, Clock, MapPin, Plus, Trash2, Edit3 } from 'lucide-react';
 
 interface CalendarEvent {
   id: string;
@@ -35,14 +35,105 @@ const TYPE_STYLES: Record<string, string> = {
   MEETING: 'bg-pink-100 text-pink-700',
 };
 
+function EventFormModal({ isOpen, onClose, onSuccess, event }: {
+  isOpen: boolean; onClose: () => void; onSuccess: () => void; event?: CalendarEvent | null;
+}) {
+  const [form, setForm] = useState({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
+  const [saving, setSaving] = useState(false);
+  const isEditing = !!event;
+
+  useEffect(() => {
+    if (isOpen) {
+      if (event) {
+        setForm({
+          title: event.title,
+          description: event.description || '',
+          event_type: event.event_type,
+          event_date: event.event_date?.split('T')[0] || '',
+          location: event.location || '',
+        });
+      } else {
+        setForm({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
+      }
+    }
+  }, [isOpen, event]);
+
+  const handleSubmit = async () => {
+    if (!form.title || !form.event_date) { toast.error('Title and date are required'); return; }
+    setSaving(true);
+    try {
+      if (isEditing) {
+        await api.patch(`/calendar/${event.id}`, form);
+        toast.success('Event updated');
+      } else {
+        await api.post('/calendar', form);
+        toast.success('Event created');
+      }
+      onSuccess();
+      onClose();
+    } catch {
+      toast.error(isEditing ? 'Failed to update event' : 'Failed to create event');
+    }
+    finally { setSaving(false); }
+  };
+
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full mx-4 shadow-xl p-6 space-y-4">
+        <h2 className="text-lg font-bold text-gray-900">{isEditing ? 'Edit Event' : 'New Calendar Event'}</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+          <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
+            className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
+            rows={2} className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="FIELD_VISIT">Field Visit</option>
+              <option value="REPORTING">Reporting</option>
+              <option value="QA">QA</option>
+              <option value="FOLLOW_UP">Follow Up</option>
+              <option value="MEETING">Meeting</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+            <input type="date" value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })}
+              className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}
+            className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium text-sm cursor-pointer">Cancel</button>
+          <button onClick={handleSubmit} disabled={saving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold text-sm cursor-pointer">
+            {saving ? 'Saving...' : isEditing ? 'Update' : 'Create'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CalendarView() {
   const { user } = useAuthStore();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
-  const [saving, setSaving] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
   const canManage = user && ['ADMIN', 'MANAGER'].includes(user.role);
   const canComplete = user && ['ADMIN', 'MANAGER', 'AGRONOMY'].includes(user.role);
@@ -61,19 +152,6 @@ export default function CalendarView() {
   };
 
   useEffect(() => { fetchEvents(); }, []);
-
-  const handleCreate = async () => {
-    if (!form.title || !form.event_date) { toast.error('Title and date are required'); return; }
-    setSaving(true);
-    try {
-      await api.post('/calendar', form);
-      toast.success('Event created');
-      setShowForm(false);
-      setForm({ title: '', description: '', event_type: 'FIELD_VISIT', event_date: '', location: '' });
-      fetchEvents();
-    } catch { toast.error('Failed to create event'); }
-    finally { setSaving(false); }
-  };
 
   const handleComplete = async (id: string) => {
     try {
@@ -119,58 +197,12 @@ export default function CalendarView() {
           ))}
         </div>
         {canCreate && (
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm">
+          <button onClick={() => { setEditingEvent(null); setShowForm(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm transition-colors shadow-sm cursor-pointer">
             <Plus className="w-4 h-4" /> New Event
           </button>
         )}
       </div>
-
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl max-w-lg w-full mx-4 shadow-xl p-6 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900">New Calendar Event</h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-              <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                rows={2} className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select value={form.event_type} onChange={e => setForm({ ...form, event_type: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none">
-                  <option value="FIELD_VISIT">Field Visit</option>
-                  <option value="REPORTING">Reporting</option>
-                  <option value="QA">QA</option>
-                  <option value="FOLLOW_UP">Follow Up</option>
-                  <option value="MEETING">Meeting</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                <input type="date" value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })}
-                  className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-              <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium text-sm">Cancel</button>
-              <button onClick={handleCreate} disabled={saving}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold text-sm">Create</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="grid gap-3">
         {sorted.length === 0 ? (
@@ -205,22 +237,29 @@ export default function CalendarView() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  {event.status === 'SCHEDULED' && (
+                    <button onClick={() => { setEditingEvent(event); setShowForm(true); }}
+                      className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors"
+                      title="Edit Event">
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                  )}
                   {canComplete && event.status === 'SCHEDULED' && (
                     <button onClick={() => handleComplete(event.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium">
+                      className="flex items-center gap-1 px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium cursor-pointer">
                       <CheckCircle className="w-3.5 h-3.5" /> Complete
                     </button>
                   )}
                   {canManage && event.status === 'SCHEDULED' && (
                     <button onClick={() => handleCancel(event.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-xs font-medium">
+                      className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-xs font-medium cursor-pointer">
                       <XCircle className="w-3.5 h-3.5" /> Cancel
                     </button>
                   )}
                   {canManage && (
                     <button onClick={() => handleDelete(event.id)}
-                      className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                       title="Delete Event">
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -231,6 +270,13 @@ export default function CalendarView() {
           ))
         )}
       </div>
+
+      <EventFormModal
+        isOpen={showForm}
+        onClose={() => { setShowForm(false); setEditingEvent(null); }}
+        onSuccess={fetchEvents}
+        event={editingEvent}
+      />
     </div>
   );
 }

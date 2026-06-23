@@ -6,7 +6,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import FarmFormModal from '@/modules/farmers/FarmFormModal';
-import { MapPin, Plus, Trash2 } from 'lucide-react';
+import { MapPin, Plus, Trash2, Edit3 } from 'lucide-react';
 
 interface Farm {
   id: string;
@@ -39,6 +39,7 @@ export default function FarmerProfile({ id }: { id: string }) {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFarmModalOpen, setIsFarmModalOpen] = useState(false);
+  const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
 
   const fetchFarms = async () => {
     try {
@@ -100,7 +101,7 @@ export default function FarmerProfile({ id }: { id: string }) {
             <h2 className="text-2xl font-bold text-gray-900">{farmer.name}</h2>
             {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
               <button onClick={deleteFarmer}
-                className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                 title="Delete Farmer">
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -182,13 +183,22 @@ export default function FarmerProfile({ id }: { id: string }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {farms.map((farm) => (
                 <div key={farm.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 relative">
-                  {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
-                    <button onClick={() => deleteFarm(farm.id)}
-                      className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY', 'HARDWARE'].includes(user.role) && (
+                      <button onClick={() => { setEditingFarm(farm); setIsFarmModalOpen(true); }}
+                        className="p-1 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors"
+                        title="Edit Farm">
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
+                      <button onClick={() => deleteFarm(farm.id)}
+                      className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                       title="Delete Farm">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                   <p className="font-bold text-gray-900">{farm.farm_name}</p>
                   <p className="text-sm text-gray-600 mt-1">{farm.total_acreage} Acres</p>
                   {farm.location_address && (
@@ -209,9 +219,17 @@ export default function FarmerProfile({ id }: { id: string }) {
 
       <FarmFormModal
         isOpen={isFarmModalOpen}
-        onClose={() => setIsFarmModalOpen(false)}
+        onClose={() => { setIsFarmModalOpen(false); setEditingFarm(null); }}
         onSuccess={fetchFarms}
         farmerId={id}
+        farmId={editingFarm?.id}
+        initialData={editingFarm ? {
+          farm_name: editingFarm.farm_name,
+          total_acreage: editingFarm.total_acreage,
+          location_address: editingFarm.location_address || '',
+          primary_crop: '',
+          secondary_crop: '',
+        } : null}
       />
     </div>
   );

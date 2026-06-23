@@ -9,7 +9,7 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import FarmerFormModal from '@/modules/farmers/FarmerFormModal';
-import { Eye, Plus, Trash2 } from 'lucide-react';
+import { Eye, Plus, Trash2, Edit3 } from 'lucide-react';
 
 interface Farmer {
   id: string;
@@ -19,6 +19,7 @@ interface Farmer {
   district: string | null;
   assigned_agent_name: string | null;
   pipeline_stage: string | null;
+  client_id?: string | null;
 }
 
 export default function FarmersPage() {
@@ -26,6 +27,7 @@ export default function FarmersPage() {
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFarmer, setEditingFarmer] = useState<Farmer | null>(null);
 
   useEffect(() => {
     fetchFarmers();
@@ -109,9 +111,16 @@ export default function FarmersPage() {
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" /> View
                         </Link>
+                        {user && ['ADMIN', 'MANAGER', 'BUSINESS', 'AGRONOMY'].includes(user.role) && (
+                          <button onClick={() => { setEditingFarmer(farmer); setIsModalOpen(true); }}
+                            className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors"
+                            title="Edit Farmer">
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
                         {user && ['ADMIN', 'MANAGER'].includes(user.role) && (
                           <button onClick={() => deleteFarmer(farmer.id)}
-                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                             title="Delete Farmer">
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -134,8 +143,18 @@ export default function FarmersPage() {
 
         <FarmerFormModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => { setIsModalOpen(false); setEditingFarmer(null); }}
           onSuccess={fetchFarmers}
+          farmerId={editingFarmer?.id}
+          initialData={editingFarmer ? {
+            name: editingFarmer.name,
+            contact_mobile: editingFarmer.contact_mobile || '',
+            cnic: '',
+            village: editingFarmer.village || '',
+            district: editingFarmer.district || '',
+            pipeline_stage: (editingFarmer.pipeline_stage as any) || 'prospect',
+            client_id: editingFarmer.client_id || '',
+          } : null}
         />
       </DashboardLayout>
     </ProtectedRoute>

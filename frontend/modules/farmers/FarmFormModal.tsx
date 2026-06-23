@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -26,11 +26,14 @@ interface FarmFormModalProps {
   onClose: () => void;
   onSuccess: () => void;
   farmerId: string;
+  farmId?: string | null;
+  initialData?: FarmFormData | null;
 }
 
-export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: FarmFormModalProps) {
+export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId, farmId, initialData }: FarmFormModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEditing = !!farmId;
 
   const {
     register,
@@ -41,24 +44,45 @@ export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: 
     resolver: zodResolver(farmSchema) as any,
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        reset({
+          farm_name: initialData.farm_name || '',
+          total_acreage: initialData.total_acreage || undefined,
+          location_address: initialData.location_address || '',
+          primary_crop: initialData.primary_crop || '',
+          secondary_crop: initialData.secondary_crop || '',
+        });
+      } else {
+        reset({ farm_name: '', total_acreage: undefined, location_address: '', primary_crop: '', secondary_crop: '' });
+      }
+    }
+  }, [isOpen, initialData, reset]);
+
   const onSubmit = async (data: FarmFormData) => {
     setIsLoading(true);
     setError(null);
     try {
-      await api.post('/farms', {
+      const payload = {
         farmer_id: farmerId,
         farm_name: data.farm_name,
         total_acreage: data.total_acreage,
         location_address: data.location_address || null,
         primary_crop: data.primary_crop || null,
         secondary_crop: data.secondary_crop || null,
-      });
+      };
+      if (isEditing) {
+        await api.patch(`/farms/${farmId}`, payload);
+        toast.success('Farm updated successfully');
+      } else {
+        await api.post('/farms', payload);
+        toast.success('Farm added successfully');
+      }
       onSuccess();
-      reset();
-      toast.success('Farm added successfully');
       onClose();
     } catch (err: unknown) {
-      const message = formatApiError(err, 'Failed to add farm');
+      const message = formatApiError(err, isEditing ? 'Failed to update farm' : 'Failed to add farm');
       toast.error(message);
       setError(message);
     } finally {
@@ -71,7 +95,7 @@ export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-xl">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900">Add Farm</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-900">{isEditing ? 'Edit Farm' : 'Add Farm'}</h2>
 
         {error && (
           <div className="p-3 mb-4 text-sm text-red-600 bg-red-100 border border-red-200 rounded">
@@ -142,7 +166,7 @@ export default function FarmFormModal({ isOpen, onClose, onSuccess, farmerId }: 
               disabled={isLoading}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 font-bold"
             >
-              {isLoading ? 'Saving...' : 'Add Farm'}
+              {isLoading ? 'Saving...' : isEditing ? 'Update Farm' : 'Add Farm'}
             </button>
           </div>
         </form>

@@ -5,7 +5,7 @@ import api from '@/services/api/axios';
 import { useAuthStore } from '@/store/auth/useAuthStore';
 import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
-import { CircuitBoard, Plus, ChevronDown, ChevronUp, Package, Trash2 } from 'lucide-react';
+import { CircuitBoard, Plus, ChevronDown, ChevronUp, Package, Trash2, Edit3 } from 'lucide-react';
 
 interface ProcurementRecord {
   id: string;
@@ -35,14 +35,25 @@ const TYPE_COLORS: Record<string, string> = {
   'Other Components': 'bg-green-100 text-green-700',
 };
 
-function CreateComponentModal({
-  isOpen, onClose, onSuccess,
+function ComponentFormModal({
+  isOpen, onClose, onSuccess, component,
 }: {
-  isOpen: boolean; onClose: () => void; onSuccess: () => void;
+  isOpen: boolean; onClose: () => void; onSuccess: () => void; component?: Component | null;
 }) {
   const [form, setForm] = useState({ name: '', type: 'Sensors', notes: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isEditing = !!component;
+
+  useEffect(() => {
+    if (isOpen) {
+      if (component) {
+        setForm({ name: component.name, type: component.type, notes: component.notes || '' });
+      } else {
+        setForm({ name: '', type: 'Sensors', notes: '' });
+      }
+    }
+  }, [isOpen, component]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +64,16 @@ function CreateComponentModal({
     }
     setLoading(true); setError('');
     try {
-      await api.post('/components', form);
-      toast.success('Component created successfully');
+      if (isEditing) {
+        await api.patch(`/components/${component.id}`, form);
+        toast.success('Component updated successfully');
+      } else {
+        await api.post('/components', form);
+        toast.success('Component created successfully');
+      }
       onSuccess(); onClose();
-      setForm({ name: '', type: 'Sensors', notes: '' });
     } catch (err: unknown) {
-      const message = formatApiError(err, 'Failed to create component');
+      const message = formatApiError(err, isEditing ? 'Failed to update component' : 'Failed to create component');
       toast.error(message);
       setError(message);
     } finally { setLoading(false); }
@@ -68,7 +83,7 @@ function CreateComponentModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Add Component</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">{isEditing ? 'Edit Component' : 'Add Component'}</h2>
         {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-3 rounded">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -93,10 +108,10 @@ function CreateComponentModal({
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Cancel</button>
+              className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 font-medium cursor-pointer">Cancel</button>
             <button type="submit" disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50">
-              {loading ? 'Adding...' : 'Add Component'}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold disabled:opacity-50 cursor-pointer">
+              {loading ? 'Saving...' : isEditing ? 'Update' : 'Add Component'}
             </button>
           </div>
         </form>
@@ -234,9 +249,10 @@ export default function ComponentsList() {
   const { user } = useAuthStore();
   const [components, setComponents] = useState<Component[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isProcureOpen, setIsProcureOpen] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
+  const [editingComponent, setEditingComponent] = useState<Component | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const canManage = user && ['ADMIN', 'MANAGER', 'HARDWARE'].includes(user.role);
@@ -271,7 +287,7 @@ export default function ComponentsList() {
     <>
       <div className="flex justify-end mb-4">
         {canManage && (
-          <button onClick={() => setIsCreateOpen(true)}
+          <button onClick={() => { setEditingComponent(null); setIsFormOpen(true); }}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm text-sm">
             <Plus className="w-4 h-4 mr-2" /> Add Component
           </button>
@@ -312,10 +328,19 @@ export default function ComponentsList() {
                     + Procure
                   </button>
                 )}
+                {canManage && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditingComponent(comp); setIsFormOpen(true); }}
+                    className="p-1.5 text-amber-500 hover:text-amber-700 hover:bg-amber-50 rounded transition-colors"
+                    title="Edit Component"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                )}
                 {canDelete && (
                   <button
                     onClick={e => { e.stopPropagation(); deleteComponent(comp.id); }}
-                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
                     title="Delete Component"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -374,10 +399,11 @@ export default function ComponentsList() {
         )}
       </div>
 
-      <CreateComponentModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
+      <ComponentFormModal
+        isOpen={isFormOpen}
+        onClose={() => { setIsFormOpen(false); setEditingComponent(null); }}
         onSuccess={fetchComponents}
+        component={editingComponent}
       />
       <ProcureModal
         isOpen={isProcureOpen}
