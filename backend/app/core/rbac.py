@@ -60,7 +60,6 @@ BILLING_READ_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.ACCOUNTS,
-    UserRole.BDM,
     UserRole.BUSINESS,
 ]
 
@@ -107,7 +106,6 @@ TASK_READ_ROLES = [
     UserRole.BDM,
     UserRole.AGRONOMY,
     UserRole.HARDWARE,
-    UserRole.ACCOUNTS,
     UserRole.EMPLOYEE,
 ]
 
@@ -115,6 +113,5 @@ TASK_CREATE_ROLES = [
     UserRole.ADMIN,
     UserRole.MANAGER,
     UserRole.BUSINESS,
-    UserRole.ACCOUNTS,
     UserRole.AGRONOMY,
 ]

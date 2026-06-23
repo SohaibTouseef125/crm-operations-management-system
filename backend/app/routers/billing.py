@@ -16,7 +16,7 @@ from app.models.user import User
 from app.models.billing import Invoice, Payment, InvoiceStatus
 from app.models.client import Client
 from app.routers.deps import check_role
-from app.core.rbac import BILLING_READ_ROLES, BILLING_WRITE_ROLES
+from app.core.rbac import BILLING_READ_ROLES, BILLING_WRITE_ROLES, REPORT_READ_ROLES
 from app.services.activity_log_service import ActivityLogService
 
 router = APIRouter()
@@ -171,7 +171,7 @@ async def get_client_ledger(
 async def monthly_revenue_report(
     year: int = 0,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     from datetime import datetime, date
     target_year = year or date.today().year
@@ -201,7 +201,7 @@ async def monthly_revenue_report(
 @router.get("/reports/revenue/yearly")
 async def yearly_revenue_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     query = select(
         func.extract('year', Invoice.created_at).label('year'),
@@ -224,7 +224,7 @@ async def yearly_revenue_report(
 async def client_revenue_report(
     client_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     inv_query = select(
         func.sum(Invoice.total_amount).label('total_invoiced'),
@@ -258,7 +258,7 @@ async def client_revenue_report(
 @router.get("/reports/invoices/summary")
 async def invoice_summary_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     query = select(
         Invoice.status,
@@ -279,7 +279,7 @@ async def invoice_summary_report(
 async def monthly_payments_report(
     year: int = 0,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     from datetime import date
     target_year = year or date.today().year
@@ -308,7 +308,7 @@ async def monthly_payments_report(
 @router.get("/reports/payments/outstanding")
 async def outstanding_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     query = select(
         Client.id,
@@ -342,7 +342,7 @@ async def outstanding_report(
 async def export_excel_report(
     year: int = 0,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     from datetime import date
     target_year = year or date.today().year
@@ -418,7 +418,7 @@ async def export_excel_report(
 async def export_pdf_report(
     year: int = 0,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(check_role(BILLING_READ_ROLES)),
+    current_user: User = Depends(check_role(REPORT_READ_ROLES)),
 ):
     from datetime import date
     target_year = year or date.today().year
