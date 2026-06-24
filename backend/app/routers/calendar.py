@@ -84,7 +84,7 @@ async def mark_event_complete(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER] and event.assigned_to_id != current_user.id:
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER, UserRole.AGRONOMY] and event.assigned_to_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the assigned person or admin can mark complete")
 
     event.status = CalendarEventStatus.COMPLETED

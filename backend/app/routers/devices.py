@@ -188,7 +188,7 @@ async def change_device_status(
     if not db_device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER, UserRole.HARDWARE] and \
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER, UserRole.HARDWARE, UserRole.AGRONOMY] and \
             current_user.id not in [db_device.assigned_hardware_id, db_device.assigned_agronomist_id]:
         raise HTTPException(status_code=403, detail="Not authorized to change device status")
 
