@@ -37,7 +37,7 @@ export default function ClientList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const canManage = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM', 'AGRONOMY'].includes(user.role);
+  const canManage = user && ['ADMIN', 'MANAGER', 'BUSINESS', 'BDM'].includes(user.role);
   const canDelete = user && ['ADMIN'].includes(user.role);
 
   useEffect(() => {

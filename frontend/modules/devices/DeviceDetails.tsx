@@ -59,7 +59,7 @@ export default function DeviceDetails({ id }: { id: string }) {
   const [changingStatus, setChangingStatus] = useState<string | null>(null);
 
   const canManage = user && ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'].includes(user.role);
-  const canChangeStatus = user && ['ADMIN', 'MANAGER', 'HARDWARE', 'AGRONOMY'].includes(user.role);
+  const canChangeStatus = user && ['ADMIN', 'MANAGER', 'HARDWARE'].includes(user.role);
 
   const fetchDevice = async () => {
     try {
