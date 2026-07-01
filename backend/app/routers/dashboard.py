@@ -4,7 +4,7 @@ from sqlalchemy import select, func, cast, Date as SADate
 from datetime import date, timedelta
 from app.database.session import get_db
 from app.models.user import User, UserRole
-from app.models.device import Device, DeviceStatus
+from app.models.device import Device, InventoryStatus
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.client import Client
 from app.models.billing import Invoice, InvoiceStatus, Payment
@@ -69,7 +69,7 @@ async def _admin_dashboard(db: AsyncSession, current_user: User) -> dict:
     stats["accounts"] = await _accounts_dashboard(db)
 
     # Device & task breakdowns
-    device_r = await db.execute(select(Device.status, func.count(Device.id)).group_by(Device.status))
+    device_r = await db.execute(select(Device.inventory_status, func.count(Device.id)).group_by(Device.inventory_status))
     stats["device_status_breakdown"] = {s: c for s, c in device_r.all()}
 
     task_r = await db.execute(select(Task.status, func.count(Task.id)).group_by(Task.status))
@@ -147,7 +147,7 @@ async def _agronomy_dashboard(db: AsyncSession, current_user: User) -> dict:
     stats["qa_tasks_pending"] = qa_tasks_r.scalar()
 
     qa_devices_r = await db.execute(
-        select(func.count(Device.id)).where(Device.status == DeviceStatus.QA_FOR_AGRONOMIST)
+        select(func.count(Device.id)).where(Device.inventory_status == InventoryStatus.PENDING_AGRO_QA)
     )
     stats["devices_in_qa"] = qa_devices_r.scalar()
 
@@ -161,11 +161,11 @@ async def _hardware_dashboard(db: AsyncSession) -> dict:
     stats = {}
 
     # Devices by status
-    device_r = await db.execute(select(Device.status, func.count(Device.id)).group_by(Device.status))
+    device_r = await db.execute(select(Device.inventory_status, func.count(Device.id)).group_by(Device.inventory_status))
     device_breakdown = {s: c for s, c in device_r.all()}
     stats["device_status_breakdown"] = device_breakdown
-    stats["devices_under_development"] = device_breakdown.get(DeviceStatus.UNDER_DEVELOPMENT, 0)
-    stats["devices_installed"] = device_breakdown.get(DeviceStatus.INSTALLED, 0)
+    stats["devices_under_development"] = device_breakdown.get(InventoryStatus.UNDER_HW_DEVELOPMENT, 0)
+    stats["devices_installed"] = device_breakdown.get(InventoryStatus.ASSIGNED_TO_CLIENT, 0)
 
     # Low stock items (< 10)
     low_stock_r = await db.execute(
@@ -330,7 +330,7 @@ async def get_recent_activity(
     recent_clients = clients_result.scalars().all()
 
     return {
-        "recent_devices": [{"id": str(d.id), "name": d.name, "status": d.status, "created_at": d.created_at} for d in recent_devices],
+        "recent_devices": [{"id": str(d.id), "name": d.display_name, "status": d.inventory_status, "created_at": d.created_at} for d in recent_devices],
         "recent_tasks": [{"id": str(t.id), "title": t.title, "status": t.status, "created_at": t.created_at} for t in recent_tasks],
         "recent_clients": [{"id": str(c.id), "name": c.name, "company_name": c.company_name, "created_at": c.created_at} for c in recent_clients]
     }

@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy import desc, update
 from app.models.client import Client
-from app.models.device import Device, DeviceHistory, DeviceStatus
+from app.models.device import Device, DeviceHistory, InventoryStatus
 from app.schemas.client import ClientCreate, ClientUpdate
 from uuid import UUID
 from typing import List, Optional
@@ -32,7 +32,9 @@ class ClientRepository:
             select(Client)
             .options(
                 selectinload(Client.leads),
-                selectinload(Client.devices),
+                selectinload(Client.devices)
+                    .selectinload(Device.history)
+                    .selectinload(DeviceHistory.changed_by),
             )
             .where(Client.id == client_id)
         )
@@ -49,7 +51,7 @@ class ClientRepository:
         await self.db.execute(
             update(Device)
             .where(Device.client_id == db_client.id)
-            .values(client_id=None, status=DeviceStatus.BACK_AT_OFFICE)
+            .values(client_id=None, inventory_status=InventoryStatus.PENDING_AGRO_QA)
         )
         await self.db.delete(db_client)
         await self.db.commit()

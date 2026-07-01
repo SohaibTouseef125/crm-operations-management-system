@@ -82,7 +82,7 @@ function HardwareDashboard({ data }: { data: any }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Under Development" value={data?.devices_under_development ?? 0} icon={Cpu} color="text-yellow-600" bg="bg-yellow-100" />
+        <StatCard title="Under HW Development" value={data?.devices_under_development ?? 0} icon={Cpu} color="text-yellow-600" bg="bg-yellow-100" />
         <StatCard title="Installed" value={data?.devices_installed ?? 0} icon={Cpu} color="text-green-600" bg="bg-green-100" />
         <StatCard title="Low Stock Items" value={data?.low_stock_items ?? 0} icon={Package} color="text-red-600" bg="bg-red-100" />
         <StatCard title="Components" value={data?.total_components ?? 0} icon={CircuitBoard} color="text-indigo-600" bg="bg-indigo-100" />

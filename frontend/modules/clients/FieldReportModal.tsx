@@ -23,7 +23,7 @@ interface FieldReportModalProps {
   onClose: () => void;
   onSuccess: () => void;
   clientId: string;
-  devices: { id: string; name: string }[];
+  devices: { id: string; display_name: string }[];
 }
 
 export default function FieldReportModal({
@@ -125,7 +125,7 @@ export default function FieldReportModal({
               >
                 <option value="">None</option>
                 {devices.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
+                  <option key={d.id} value={d.id}>{d.display_name}</option>
                 ))}
               </select>
             </div>

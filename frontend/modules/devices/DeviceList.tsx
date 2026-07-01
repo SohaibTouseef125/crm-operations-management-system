@@ -11,19 +11,32 @@ import { Trash2, Edit, Plus } from 'lucide-react';
 
 interface Device {
   id: string;
-  name: string;
   serial_number: string;
-  status: 'UNDER_DEVELOPMENT' | 'QA_FOR_AGRONOMIST' | 'QA_PASSED_IN_INVENTORY' | 'INSTALLED' | 'BACK_AT_OFFICE';
+  device_type: string;
+  inventory_status: string;
   installation_location: string | null;
   updated_at: string;
 }
 
 const statusColors: Record<string, string> = {
-  UNDER_DEVELOPMENT: 'bg-yellow-100 text-yellow-800',
-  QA_FOR_AGRONOMIST: 'bg-blue-100 text-blue-800',
-  QA_PASSED_IN_INVENTORY: 'bg-green-100 text-green-800',
-  INSTALLED: 'bg-purple-100 text-purple-800',
-  BACK_AT_OFFICE: 'bg-red-100 text-red-800',
+  under_hw_development: 'bg-yellow-100 text-yellow-800',
+  pending_agro_qa: 'bg-blue-100 text-blue-800',
+  ready_to_assign: 'bg-green-100 text-green-800',
+  assigned_to_client: 'bg-purple-100 text-purple-800',
+  under_repair: 'bg-red-100 text-red-800',
+};
+
+const statusLabels: Record<string, string> = {
+  under_hw_development: 'Under HW Dev',
+  pending_agro_qa: 'Pending Agro QA',
+  ready_to_assign: 'Ready to Assign',
+  assigned_to_client: 'Assigned',
+  under_repair: 'Under Repair',
+};
+
+const deviceTypeLabels: Record<string, string> = {
+  MOBILE_DEVICE: 'Mobile Device',
+  AQUASAVE_PRO: 'AquaSave Pro',
 };
 
 export default function DeviceList() {
@@ -90,7 +103,8 @@ export default function DeviceList() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Device Name</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Device</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Serial Number</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Location</th>
@@ -101,11 +115,16 @@ export default function DeviceList() {
           <tbody className="bg-white divide-y divide-gray-100">
             {devices.map((device) => (
               <tr key={device.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{device.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                  {deviceTypeLabels[device.device_type] || device.device_type} — {device.serial_number}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                  {deviceTypeLabels[device.device_type] || device.device_type}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{device.serial_number}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-2.5 py-1 inline-flex text-[10px] leading-5 font-black rounded-full uppercase ${statusColors[device.status] || 'bg-gray-100 text-gray-800'}`}>
-                    {device.status.replace(/_/g, ' ')}
+                  <span className={`px-2.5 py-1 inline-flex text-[10px] leading-5 font-black rounded-full uppercase ${statusColors[device.inventory_status] || 'bg-gray-100 text-gray-800'}`}>
+                    {statusLabels[device.inventory_status] || device.inventory_status.replace(/_/g, ' ')}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{device.installation_location || '—'}</td>
@@ -152,8 +171,9 @@ export default function DeviceList() {
         onSuccess={fetchDevices}
         deviceId={selectedDevice?.id}
         initialData={selectedDevice ? {
-          ...selectedDevice,
-          installation_location: selectedDevice.installation_location ?? undefined
+          serial_number: selectedDevice.serial_number,
+          device_type: selectedDevice.device_type as 'MOBILE_DEVICE' | 'AQUASAVE_PRO',
+          installation_location: selectedDevice.installation_location ?? undefined,
         } : undefined}
       />
     </>

@@ -7,6 +7,7 @@ CLIENT_READ_ROLES = [
     UserRole.BUSINESS,
     UserRole.BDM,
     UserRole.AGRONOMY,
+    UserRole.HARDWARE,
     UserRole.ACCOUNTS,
 ]
 

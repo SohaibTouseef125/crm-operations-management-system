@@ -1,28 +1,27 @@
 from pydantic import BaseModel
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
-from app.models.device import DeviceStatus
-
+from app.models.device import DeviceType, InventoryStatus, ClientOpStatus
 from app.schemas.user import UserInDB
 
+
 class DeviceHistoryBase(BaseModel):
-    previous_status: Optional[DeviceStatus] = None
-    new_status: DeviceStatus
+    previous_status: Optional[InventoryStatus] = None
+    new_status: InventoryStatus
     notes: Optional[str] = None
-    # For backward compatibility
-    status: DeviceStatus
+
 
 class DeviceHistoryCreate(DeviceHistoryBase):
     device_id: UUID
     changed_by_id: UUID
 
+
 class DeviceHistoryInDB(BaseModel):
     id: UUID
     device_id: UUID
-    previous_status: Optional[DeviceStatus] = None
-    new_status: DeviceStatus
-    status: DeviceStatus
+    previous_status: Optional[InventoryStatus] = None
+    new_status: InventoryStatus
     notes: Optional[str] = None
     changed_by_id: UUID
     created_at: datetime
@@ -33,30 +32,38 @@ class DeviceHistoryInDB(BaseModel):
 
 
 class DeviceBase(BaseModel):
-    name: str
     serial_number: str
-    status: DeviceStatus = DeviceStatus.UNDER_DEVELOPMENT
-    installation_location: Optional[str] = None
-    client_id: Optional[UUID] = None
-    assigned_hardware_id: Optional[UUID] = None
-    assigned_agronomist_id: Optional[UUID] = None
+    device_type: DeviceType
     notes: Optional[str] = None
+
 
 class DeviceCreate(DeviceBase):
     pass
 
+
 class DeviceUpdate(BaseModel):
-    name: Optional[str] = None
     serial_number: Optional[str] = None
-    status: Optional[DeviceStatus] = None
+    device_type: Optional[DeviceType] = None
     installation_location: Optional[str] = None
-    client_id: Optional[UUID] = None
-    assigned_hardware_id: Optional[UUID] = None
-    assigned_agronomist_id: Optional[UUID] = None
     notes: Optional[str] = None
 
-class DeviceInDB(DeviceBase):
+
+class DeviceInDB(BaseModel):
     id: UUID
+    serial_number: str
+    device_type: DeviceType
+    inventory_status: InventoryStatus
+    client_op_status: Optional[ClientOpStatus] = None
+    hw_developer_id: Optional[UUID] = None
+    hw_qa_report_url: Optional[str] = None
+    agro_qa_by: Optional[UUID] = None
+    agro_qa_report_url: Optional[str] = None
+    client_id: Optional[UUID] = None
+    installation_location: Optional[str] = None
+    notes: Optional[str] = None
+    repair_receipt_timestamp: Optional[datetime] = None
+    fault_cause_report_url: Optional[str] = None
+    estimated_repair_date: Optional[date] = None
     created_at: datetime
     updated_at: datetime
     history: List[DeviceHistoryInDB] = []

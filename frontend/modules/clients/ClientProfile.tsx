@@ -11,9 +11,9 @@ import { Plus, Calendar, FileText, AlertCircle, Upload, Download, Trash2 } from 
 
 interface Device {
   id: string;
-  name: string;
   serial_number: string;
-  status: string;
+  device_type: string;
+  inventory_status: string;
 }
 
 interface Invoice {
@@ -455,11 +455,11 @@ export default function ClientProfile({ id }: { id: string }) {
                   {client.devices.map((device) => (
                     <div key={device.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex justify-between items-center">
                       <div>
-                        <p className="font-bold text-gray-900">{device.name}</p>
+                        <p className="font-bold text-gray-900">{device.device_type?.replace(/_/g, ' ') || 'Device'}</p>
                         <p className="text-[10px] text-gray-700 font-bold uppercase tracking-tighter">SN: {device.serial_number}</p>
                       </div>
                       <span className="px-2 py-1 text-[10px] font-black rounded-full bg-blue-100 text-blue-800 uppercase">
-                        {device.status.replace(/_/g, ' ')}
+                        {(device.inventory_status || '').replace(/_/g, ' ')}
                       </span>
                     </div>
                   ))}
@@ -733,7 +733,7 @@ export default function ClientProfile({ id }: { id: string }) {
         onClose={() => setIsReportModalOpen(false)} 
         onSuccess={fetchReports}
         clientId={id}
-        devices={client.devices.map(d => ({ id: d.id, name: d.name }))}
+        devices={client.devices.map(d => ({ id: d.id, display_name: `${(d.device_type || '').replace(/_/g, ' ')} - ${d.serial_number}` }))}
       />
     </div>
   );

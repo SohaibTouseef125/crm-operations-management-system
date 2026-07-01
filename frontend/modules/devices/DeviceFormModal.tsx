@@ -9,9 +9,8 @@ import { toast } from '@/lib/toast';
 import { formatApiError } from '@/lib/formatApiError';
 
 const deviceSchema = z.object({
-  name: z.string().min(1, 'Device name is required'),
   serial_number: z.string().min(1, 'Serial number is required'),
-  status: z.enum(['UNDER_DEVELOPMENT', 'QA_FOR_AGRONOMIST', 'QA_PASSED_IN_INVENTORY', 'INSTALLED', 'BACK_AT_OFFICE']).optional(),
+  device_type: z.enum(['MOBILE_DEVICE', 'AQUASAVE_PRO']),
   installation_location: z.string().nullable().optional(),
   notes: z.string().optional(),
 });
@@ -86,13 +85,16 @@ export default function DeviceFormModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Device Name *</label>
-            <input
-              {...register('name')}
+            <label className="block text-sm font-medium text-gray-700">Device Type *</label>
+            <select
+              {...register('device_type')}
               className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="e.g., Agri Sensor v1.0"
-            />
-            {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+            >
+              <option value="">Select device type...</option>
+              <option value="MOBILE_DEVICE">Mobile Device</option>
+              <option value="AQUASAVE_PRO">AquaSave Pro</option>
+            </select>
+            {errors.device_type && <p className="mt-1 text-xs text-red-500">{errors.device_type.message}</p>}
           </div>
 
           <div>
@@ -105,21 +107,6 @@ export default function DeviceFormModal({
             {errors.serial_number && (
               <p className="mt-1 text-xs text-red-500">{errors.serial_number.message}</p>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <select
-              {...register('status')}
-              className="w-full px-4 py-2 mt-1 border rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            >
-              <option value="">Select status...</option>
-              <option value="UNDER_DEVELOPMENT">Under Development</option>
-              <option value="QA_FOR_AGRONOMIST">QA for Agronomist</option>
-              <option value="QA_PASSED_IN_INVENTORY">QA Passed in Inventory</option>
-              <option value="INSTALLED">Installed</option>
-              <option value="BACK_AT_OFFICE">Back at Office</option>
-            </select>
           </div>
 
           <div>
